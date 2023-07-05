@@ -160,8 +160,9 @@
             }
             function updatePlayButton() {
                 el.playButton.href = `index.html#level=${btoa(JSON.stringify(level))}`;
+                el.output.value = level.join('\n');
             }
-            function updateOutput() {
+            function evaluateTiles() {
                 let x = 0;
                 let rows = [];
                 let row = '';
@@ -190,8 +191,6 @@
                         x = 0;
                     }
                 }
-                el.output.value = rows.join('\n');
-                updatePlayButton();
                 saveLevel(rows);
             }
             function generateTiles() {
@@ -310,7 +309,8 @@
                     e.target.className = `tile ${selectedItem}`;
                 }
                 removeHash();
-                updateOutput();
+                evaluateTiles();
+                updatePlayButton();
             }
             function onTileEntered(e) {
                 if (e.buttons === 1) {
@@ -367,7 +367,8 @@
                 el.scene = document.createElement('div');
                 el.scene.id = 'scene';
                 build();
-                updateOutput();
+                evaluateTiles();
+                updatePlayButton();
                 document.querySelector('#copy-to-clipboard').addEventListener('click',
                     () => {
                         navigator.clipboard.writeText(JSON.stringify(level, null, 2)).then(
