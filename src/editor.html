@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rutschpartie – Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            background-color: #440B7D;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        #game {
+            position: relative;
+            margin: 10px;
+            width: fit-content;
+            background-color: #B0E8F8;
+        }
+
+        #scene {
+            display: grid;
+        }
+
+        #editor {
+            margin: 10px;
+            width: fit-content;
+        }
+
+        #editor {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-content: flex-end;
+        }
+
+        #item-form {
+            background-color: #AF9AFA;
+            padding: 5px;
+        }
+
+        .tile {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            background-size: cover;
+            background-repeat: no-repeat;
+            position: relative;
+            top: 0;
+            left: 0;
+            transition-timing-function: ease-in;
+            cursor: pointer;
+        }
+
+        a {
+            display: inline-block;
+            color: white;
+            text-decoration: wavy;
+        }
+
+        .tile:hover {
+            border: 2px solid #440B7D;
+        }
+
+        .penguin {
+            background-image: url(static/images/penguin.png);
+        }
+
+        .ice {
+            background-image: url(static/images/ice.png);
+        }
+
+        .marker {
+            background-image: url(static/images/marker.png);
+        }
+
+        .rock {
+            background-image: url(static/images/rock.png);
+        }
+
+        .exit {
+            background-image: url(static/images/exit.png);
+        }
+
+        .coin {
+            background-image: url(static/images/coin.png);
+        }
+
+        .hole {
+            background-image: url(static/images/hole.png);
+        }
+
+        input[name="item"] {
+            cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        input[name="item"]+span {
+            cursor: pointer;
+            border: 2px solid #440B7D;
+        }
+
+        input[name="item"]+span:hover {
+            cursor: pointer;
+            border: 2px solid #a86ee3;
+        }
+
+        input[name="item"]:checked+span {
+            outline: 2px solid #ff1010;
+        }
+
+        #output {
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        button {
+            border: 1px solid black;
+            padding: 4px 1em;
+            display: inline-block;
+            width: fit-content;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+    </style>
+    <script>
+        (function (window) {
+            const STORAGE_KEY = 'rutschpartie.level';
+            const TILE_SIZE = 32;
+            const DEFAULT_WIDTH = 16;
+            const DEFAULT_HEIGHT = 16;
+            const ICE = ' ';
+            const ROCK = '#';
+            const EXIT = 'X';
+            const PLAYER = 'P';
+            const HOLE = 'O';
+            const BREADCRUMB = '.';
+            const el = {};
+            let selectedItem = 'rock';
+            let shiftPressed = false;
+            const player = {
+                x: 0,
+                y: 0,
+                el: null,
+                moves: [],
+            };
+            let level = null;
+            let width;
+            let height;
+            function saveLevel(rows) {
+                level = rows;
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(level));
+            }
+            function updatePlayButton() {
+                el.playButton.href = `index.html#level=${btoa(JSON.stringify(level))}`;
+            }
+            function updateOutput() {
+                let x = 0;
+                let rows = [];
+                let row = '';
+                for (const tile of el.scene.children) {
+                    if (tile.classList.contains('rock')) {
+                        row += ROCK;
+                    }
+                    else if (tile.classList.contains('penguin')) {
+                        row += PLAYER;
+                    }
+                    else if (tile.classList.contains('exit')) {
+                        row += EXIT;
+                    }
+                    else if (tile.classList.contains('hole')) {
+                        row += HOLE;
+                    }
+                    else if (tile.classList.contains('marker')) {
+                        row += BREADCRUMB;
+                    }
+                    else {
+                        row += ICE;
+                    }
+                    if (++x === width) {
+                        rows.push(row);
+                        row = '';
+                        x = 0;
+                    }
+                }
+                el.output.value = rows.join('\n');
+                updatePlayButton();
+                saveLevel(rows);
+            }
+            function generateTiles() {
+                const tiles = [];
+                for (let y = 0; y < level.length; ++y) {
+                    const row = level[y];
+                    for (let x = 0; x < row.length; ++x) {
+                        const item = row[x];
+                        const tile = document.createElement('span');
+                        tile.className = 'tile';
+                        tile.addEventListener('click', onTileClicked);
+                        tile.addEventListener('mousemove', onTileEntered);
+                        switch (item) {
+                            case ROCK:
+                                tile.classList.add('rock');
+                                break;
+                            case HOLE:
+                                tile.classList.add('hole');
+                                break;
+                            case EXIT:
+                                tile.classList.add('exit');
+                                break;
+                            case PLAYER:
+                                tile.classList.add('penguin');
+                                break;
+                            case BREADCRUMB:
+                                tile.classList.add('marker');
+                                break;
+                            case ICE:
+                            // fall-through
+                            default:
+                                tile.classList.add('ice');
+                                break;
+                        }
+                        tiles.push(tile);
+                    }
+                }
+                return tiles;
+            }
+            function build() {
+                width = level[0].length;
+                height = level.length;
+                el.output.cols = width;
+                el.output.rows = height;
+                el.scene.style.gridTemplateColumns = `repeat(${width}, ${TILE_SIZE}px)`;
+                el.scene.style.gridTemplateRows = `repeat(${height}, ${TILE_SIZE}px)`;
+                el.scene.replaceChildren(...generateTiles());
+                el.game.replaceChildren(el.scene);
+            }
+            function removeHash() {
+                if (window.history.pushState) {
+                    window.history.pushState('', '/', window.location.pathname)
+                }
+                else {
+                    window.location.hash = '';
+                }
+            }
+            function onPasted(e) {
+                e.preventDefault();
+                el.output.value = (event.clipboardData || window.clipboardData).getData('text');
+                const levelData = el.output.value.split(/\n/g);
+                saveLevel(levelData);
+                updatePlayButton();
+                build();
+                removeHash();
+            }
+            function onKeyPress(e) {
+                if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) {
+                    return;
+                }
+                let newSelectedItem = selectedItem;
+                switch (e.key) {
+                    case 'r':
+                    case '#':
+                        newSelectedItem = 'rock';
+                        break;
+                    case 'm':
+                    case '.':
+                        newSelectedItem = 'marker';
+                        break;
+                    case 'i':
+                    case ' ':
+                        newSelectedItem = 'ice';
+                        break;
+                    case 'o':
+                        newSelectedItem = 'hole';
+                        break;
+                    case 'p':
+                        newSelectedItem = 'penguin';
+                        break;
+                    case 'x':
+                        newSelectedItem = 'exit';
+                        break;
+                    default:
+                        break;
+                }
+                if (newSelectedItem !== selectedItem) {
+                    selectedItem = newSelectedItem;
+                    document.itemForm.item.value = selectedItem;
+                    e.preventDefault();
+                }
+            }
+            function onKeyDown(e) {
+                shiftPressed = e.key === 'Shift';
+            }
+            function onKeyUp(e) {
+                if (e.key === 'Shift') {
+                    shiftPressed = false;
+                }
+            }
+            function onTileClicked(e) {
+                if (shiftPressed) {
+                    e.target.className = `tile ice`;
+                }
+                else {
+                    e.target.className = `tile ${selectedItem}`;
+                }
+                removeHash();
+                updateOutput();
+            }
+            function onTileEntered(e) {
+                if (e.buttons === 1) {
+                    onTileClicked(e);
+                }
+            }
+            function generateEmptyLevel(w, h) {
+                return []
+                    .concat([ROCK.repeat(w)])
+                    .concat(Array(h - 2).fill(ROCK + ICE.repeat(w - 2) + ROCK))
+                    .concat([ROCK.repeat(w)]);
+            }
+            function main() {
+                if (localStorage.hasOwnProperty(STORAGE_KEY)) {
+                    try {
+                        level = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                    }
+                    catch (e) {
+                        alert(`Cannot parse JSON data in localStorage["${STORAGE_KEY}"]`);
+                    }
+                }
+                if (!(level instanceof Array) && window.location.hash) {
+                    const hash = window.location.hash.substring(1);
+                    const params = hash.split(';');
+                    let w = 0, h = 0;
+                    for (const param of params) {
+                        const [key, value] = param.split('=');
+                        if (key === 'width' && Number(value) > 0) {
+                            w = Number.parseInt(value);
+                        }
+                        else if (key === 'height' && Number(value) > 0) {
+                            h = Number.parseInt(value);
+                        }
+                    }
+                    if (w > 3 && h > 3) {
+                        level = generateEmptyLevel(w, h);
+                    }
+                }
+                if (!(level instanceof Array)) {
+                    level = generateEmptyLevel(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+                }
+                el.game = document.querySelector('#game');
+                el.playButton = document.querySelector('#play');
+                el.output = document.querySelector('#output');
+                el.output.addEventListener('paste', onPasted);
+                el.output.addEventListener('focus', e => e.target.select());
+                el.itemForm = document.querySelectorAll('#item-form');
+                el.itemSelector = document.querySelectorAll('input[name="item"]');
+                el.itemSelector.forEach(input => {
+                    input.addEventListener('change', e => {
+                        selectedItem = e.target.value;
+                    });
+                });
+                el.scene = document.createElement('div');
+                el.scene.id = 'scene';
+                build();
+                updateOutput();
+                document.querySelector('#copy-to-clipboard').addEventListener('click',
+                    () => {
+                        navigator.clipboard.writeText(JSON.stringify(level, null, 2)).then(
+                            () => { },
+                            () => {
+                                alert('Copy failed.');
+                            }
+                        );
+                    });
+            }
+            window.addEventListener('load', main);
+            window.addEventListener('keydown', onKeyDown);
+            window.addEventListener('keyup', onKeyUp);
+            window.addEventListener('keypress', onKeyPress);
+        })(window);
+    </script>
+
+</head>
+
+<body>
+    <div id="editor">
+        <div>
+            <div style="margin: 10px">
+                <form id="item-form" name="itemForm">
+                    <label>
+                        <input name="item" type="radio" value="marker" />
+                        <span class="tile marker" title="[m]arker"></span>
+                    </label>
+                    <label>
+                        <input name="item" type="radio" value="ice" />
+                        <span class="tile ice" title="[i]ce"></span>
+                    </label>
+                    <label>
+                        <input name="item" type="radio" value="rock" checked />
+                        <span class="tile rock" title="[r]ock"></span>
+                    </label>
+                    <label>
+                        <input name="item" type="radio" value="hole" />
+                        <span class="tile hole" title="h[o]le"></span>
+                    </label>
+                    <label>
+                        <input name="item" type="radio" value="exit" />
+                        <span class="tile exit" title="e[x]it"></span>
+                    </label>
+                    <label>
+                        <input name="item" type="radio" value="penguin" />
+                        <span class="tile penguin" title="[p]layer"></span>
+                    </label>
+                </form>
+            </div>
+            <div id="game"></div>
+        </div>
+        <div
+            style="margin: 10px; display: flex; align-content: space-between; justify-content: space-between; flex-direction: column;">
+            <span><a href="index.html" target="_blank" id="play">▶️ Play game in new window</a></span>
+            <textarea id="output"></textarea>
+            <button id="copy-to-clipboard">Copy JSON data to clipboard</button>
+        </div>
+    </div>
+</body>
+
+</html>
