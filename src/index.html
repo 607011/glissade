@@ -24,9 +24,23 @@
             font-size: 32px;
         }
 
+        #main-container {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            justify-items: center;
+            justify-content: center;
+            align-items: center;
+            align-content: center;
+        }
+
+        #game-container {
+            display: flex;
+            flex-direction: column;
+        }
+
         #game {
             position: relative;
-            margin: 10px;
             padding: 2px;
             width: fit-content;
             border: 2px solid #440B7D;
@@ -40,39 +54,25 @@
             margin: 10px;
         }
 
+        #stats {
+            margin: 6px 0 0 6px;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-content: space-between;
+        }
+
         #score {
             width: fit-content;
         }
 
         #controls {
+            grid-area: controls;
             display: grid;
-            margin: 0 10px;
+            margin: 10px 0 0 10px;
             grid-template-columns: repeat(3, 44px);
             grid-template-rows: repeat(3, 44px);
             width: fit-content;
-        }
-
-        #main-container {
-            display: grid;
-            justify-items: start;
-            align-items: start;
-        }
-
-        @media (orientation: landscape) {
-            #main-container {
-                grid-template-areas: "score ."
-                 "game controls"
-                 "moves .";
-            }
-        }
-
-        @media (orientation: portrait) {
-            #main-container {
-                grid-template-areas: "score"
-                 "game"
-                 "moves"
-                 "controls";
-            }
         }
 
         .control {
@@ -118,15 +118,18 @@
             background-image: url(static/images/hole.png);
         }
     </style>
-    <script async src="index.js"></script>
 </head>
 
 <body>
     <div id="main-container">
-        <p style="grid-area: score">Score <span id="score">0</span></p>
-        <div style="grid-area: game" id="game"></div>
-        <p style="grid-area: moves; width: fit-content">Moves <span id="move-count">(0)</span></p>
-        <div style="grid-area: controls" id="controls">
+        <div id="game-container">
+            <div id="stats">
+                <div>Score <span id="score">0</span></div>
+                <div>Moves <span id="move-count">0</span></div>
+            </div>
+            <div id="game"></div>
+        </div>
+        <div id="controls">
             <div></div>
             <div class="control up">⬆️</div>
             <div></div>
@@ -138,6 +141,7 @@
             <div></div>
         </div>
     </div>
+    <script async src="index.js"></script>
 </body>
 
 </html>
