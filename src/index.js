@@ -142,6 +142,10 @@
     function onExitReached() {
         alert('Yippie yeah!');
     }
+    function updateMoveCounter() {
+        el.moveCount.textContent = player.moves.length;
+        el.moveCount.setAttribute('data-moves', `${player.moves.join('')}`);
+    }
     function move(dx, dy) {
         if (isMoving)
             return;
@@ -219,9 +223,42 @@
         if (move && (x !== player.x || y !== player.y)) {
             placePlayerAt(player.x, player.y);
             player.moves.push(move);
-            el.moveCount.textContent = player.moves.length;
-            el.moveCount.setAttribute('data-moves', `${player.moves.join('')}`);
+            updateMoveCounter();
         }
+    }
+    function onClick(e) {
+        const dx = (e.target.offsetLeft / TILE_SIZE) - player.x;
+        const dy = (e.target.offsetTop / TILE_SIZE) - player.y;
+        if (Math.abs(dx) > Math.abs(dy)) {
+            if (dx > 0) {
+                window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'd' }));
+            }
+            else {
+                window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'a' }));
+            }
+        }
+        else {
+            if (dy > 0) {
+                window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 's' }));
+            }
+            else {
+                window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'w' }));
+            }
+        }
+    }
+    function onHashChanged() {
+        let levelData = [...GAMES[levelNum]];
+        if (window.location.hash) {
+            const hash = window.location.hash.substring(1);
+            const params = hash.split(';');
+            for (const param of params) {
+                const [key, value] = param.split('=');
+                if (key === 'level' && value.length > 0) {
+                    levelData = JSON.parse(atob(value));
+                }
+            }
+        }
+        setLevel(levelData);
     }
     function generateScene() {
         holes = [];
@@ -247,7 +284,7 @@
                         break;
                     case PLAYER:
                         placePlayerAt(x, y);
-                        // fall-through
+                    // fall-through
                     case ICE:
                     default:
                         tile.classList.add('ice');
@@ -265,18 +302,23 @@
         level = levelData;
         width = level[0].length;
         height = level.length;
+        player.moves = [];
+        updateMoveCounter();
         el.scene = generateScene();
         el.game.replaceChildren(el.scene, player.el);
         replacePlayerWithIceTile();
     }
     function main() {
         el.game = document.querySelector('#game');
+        el.game.addEventListener('click', onClick);
+        el.level = document.querySelector('#level-num');
         el.score = document.querySelector('#score');
         el.moveCount = document.querySelector('#move-count');
         player.el = document.createElement('span');
         player.el.className = 'tile penguin';
         window.addEventListener('keydown', onKeyPressed);
         window.addEventListener('keypress', onKeyPressed);
+        window.addEventListener('hashchange', onHashChanged);
         document.querySelector('.control.up').addEventListener('click', () => {
             window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'w' }));
         });
@@ -289,18 +331,8 @@
         document.querySelector('.control.left').addEventListener('click', () => {
             window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'a' }));
         });
-        let levelData = [...GAMES[levelNum]];
-        if (window.location.hash) {
-            const hash = window.location.hash.substring(1);
-            const params = hash.split(';');
-            for (const param of params) {
-                const [key, value] = param.split('=');
-                if (key === 'level' && value.length > 0) {
-                    levelData = JSON.parse(atob(value));
-                }
-            }
-        }
-        setLevel(levelData);
+        el.level.textContent = levelNum;
+        onHashChanged();
     }
     window.addEventListener('load', main);
 })(window);

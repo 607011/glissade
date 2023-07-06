@@ -70,8 +70,8 @@
             grid-area: controls;
             display: grid;
             margin: 10px 0 0 10px;
-            grid-template-columns: repeat(3, 44px);
-            grid-template-rows: repeat(3, 44px);
+            grid-template-columns: repeat(3, 32px);
+            grid-template-rows: repeat(3, 32px);
             width: fit-content;
         }
 
@@ -88,14 +88,12 @@
             position: relative;
             top: 0;
             left: 0;
-            transition-timing-function: ease-in;
         }
 
         .penguin {
             position: absolute;
             background-image: url(static/images/penguin.png);
             transition-property: top, left;
-            transition-timing-function: cubic-bezier(0.645, 0.200, 1.000, 1.225);
         }
 
         .ice {
@@ -125,9 +123,11 @@
         <div id="game-container">
             <div id="stats">
                 <div>Score <span id="score">0</span></div>
+                <div>Level <span id="level-num">0</span></div>
                 <div>Moves <span id="move-count">0</span></div>
             </div>
             <div id="game"></div>
+            <div id="moves"></div>
         </div>
         <div id="controls">
             <div></div>
