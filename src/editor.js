@@ -142,7 +142,7 @@
     }
     function onPasted(e) {
         e.preventDefault();
-        el.output.value = (event.clipboardData || window.clipboardData).getData('text');
+        el.output.value = (e.clipboardData || window.clipboardData).getData('text');
         const levelData = el.output.value.split(/\n/g);
         saveLevel(levelData);
         updatePlayButton();
