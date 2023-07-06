@@ -1,5 +1,31 @@
 (function (window) {
     "use strict";
+    class Undoable {
+        undo() { }
+    }
+    class TilePlaced extends Undoable {
+        constructor(undoFunc) {
+            super();
+            this.undo = undoFunc;
+        }
+    }
+    class UndoHistory {
+        constructor(maxSteps = 500) {
+            this.maxSteps = maxSteps;
+            this.history = [];
+        }
+        add(undoable) {
+            this.history.push(undoable);
+            if (this.history.length > this.maxSteps) {
+                this.history.shift();
+            }
+        }
+        undo() {
+            if (this.history.length === 0)
+                return;
+            this.history.pop().undo();
+        }
+    }
     const STORAGE_KEY = 'rutschpartie.level';
     const TILE_SIZE = 32;
     const DEFAULT_WIDTH = 16;
@@ -13,15 +39,13 @@
     const el = {};
     let selectedItem = 'rock';
     let shiftPressed = false;
-    const player = {
-        x: 0,
-        y: 0,
-        el: null,
-        moves: [],
-    };
+    let undoHistory = new UndoHistory;
     let level = null;
     let width;
     let height;
+    function undo() {
+        undoHistory.undo();
+    }
     function saveLevel(rows) {
         level = rows;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(level));
@@ -162,6 +186,10 @@
         }
     }
     function onKeyDown(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+            undo();
+            return;
+        }
         shiftPressed = e.key === 'Shift';
     }
     function onKeyUp(e) {
@@ -170,15 +198,23 @@
         }
     }
     function onTileClicked(e) {
+        const beforeClassName = e.target.className;
         if (shiftPressed) {
             e.target.className = `tile ice`;
         }
         else {
             e.target.className = `tile ${selectedItem}`;
         }
+        if (e.target.className !== beforeClassName) {
+            undoHistory.add(new TilePlaced(function undoTileClick() {
+                e.target.className = beforeClassName;
+                evaluateTiles();
+                updatePlayButton();
+            }));
+            evaluateTiles();
+            updatePlayButton();
+        }
         removeHash();
-        evaluateTiles();
-        updatePlayButton();
     }
     function onTileEntered(e) {
         if (e.buttons === 1) {
