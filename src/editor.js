@@ -95,7 +95,7 @@
                 const tile = document.createElement('span');
                 tile.className = 'tile';
                 tile.addEventListener('click', onTileClicked);
-                tile.addEventListener('mousemove', onTileEntered);
+                tile.addEventListener('mouseenter', onTileEntered);
                 switch (item) {
                     case ROCK:
                         tile.classList.add('rock');

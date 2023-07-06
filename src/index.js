@@ -118,7 +118,7 @@
         ],
     };
     const el = {};
-    const player = {
+    let player = {
         x: 0,
         y: 0,
         el: null,
@@ -219,7 +219,8 @@
         if (move && (x !== player.x || y !== player.y)) {
             placePlayerAt(player.x, player.y);
             player.moves.push(move);
-            el.moveCount.textContent = `${player.moves.join('')} (${player.moves.length})`;
+            el.moveCount.textContent = player.moves.length;
+            el.moveCount.setAttribute('data-moves', `${player.moves.join('')}`);
         }
     }
     function generateScene() {
@@ -245,9 +246,8 @@
                         holes.push({ x, y });
                         break;
                     case PLAYER:
-                        tile.classList.add('ice');
                         placePlayerAt(x, y);
-                        break;
+                        // fall-through
                     case ICE:
                     default:
                         tile.classList.add('ice');
