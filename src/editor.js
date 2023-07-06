@@ -1,11 +1,7 @@
 (function (window) {
     "use strict";
     class Undoable {
-        undo() { }
-    }
-    class TilePlaced extends Undoable {
         constructor(undoFunc) {
-            super();
             this.undo = undoFunc;
         }
     }
@@ -207,7 +203,7 @@
             e.target.className = `tile ${selectedItem}`;
         }
         if (e.target.className !== beforeClassName) {
-            undoHistory.add(new TilePlaced(function undoTileClick() {
+            undoHistory.add(new Undoable(function undoTileClick() {
                 e.target.className = beforeClassName;
                 evaluateTiles();
                 updatePlayButton();
@@ -222,6 +218,42 @@
             onTileClicked(e);
         }
     }
+    function onHashChanged() {
+        const hash = window.location.hash.substring(1);
+        const params = hash.split(';');
+        let w = 0, h = 0;
+        for (const param of params) {
+            const [key, value] = param.split('=');
+            if (key === 'width' && Number(value) > 0) {
+                w = Number.parseInt(value);
+            }
+            else if (key === 'height' && Number(value) > 0) {
+                h = Number.parseInt(value);
+            }
+            else if (key === 'level' && value.length > 0) {
+                level = JSON.parse(atob(value));
+            }
+        }
+        if (level === null) {
+            if (w > 3 && h > 3) {
+                level = generateEmptyLevel(w, h);
+            }
+            else if (localStorage.hasOwnProperty(STORAGE_KEY)) {
+                try {
+                    level = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                }
+                catch (e) {
+                    alert(`Cannot parse JSON data in localStorage["${STORAGE_KEY}"]`);
+                }
+            }
+        }
+        if (level === null) {
+            level = generateEmptyLevel(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+        }
+        build();
+        evaluateTiles();
+        updatePlayButton();
+    }
     function generateEmptyLevel(w, h) {
         return []
             .concat([ROCK.repeat(w)])
@@ -229,34 +261,6 @@
             .concat([ROCK.repeat(w)]);
     }
     function main() {
-        if (localStorage.hasOwnProperty(STORAGE_KEY)) {
-            try {
-                level = JSON.parse(localStorage.getItem(STORAGE_KEY));
-            }
-            catch (e) {
-                alert(`Cannot parse JSON data in localStorage["${STORAGE_KEY}"]`);
-            }
-        }
-        if (!(level instanceof Array) && window.location.hash) {
-            const hash = window.location.hash.substring(1);
-            const params = hash.split(';');
-            let w = 0, h = 0;
-            for (const param of params) {
-                const [key, value] = param.split('=');
-                if (key === 'width' && Number(value) > 0) {
-                    w = Number.parseInt(value);
-                }
-                else if (key === 'height' && Number(value) > 0) {
-                    h = Number.parseInt(value);
-                }
-            }
-            if (w > 3 && h > 3) {
-                level = generateEmptyLevel(w, h);
-            }
-        }
-        if (!(level instanceof Array)) {
-            level = generateEmptyLevel(DEFAULT_WIDTH, DEFAULT_HEIGHT);
-        }
         el.game = document.querySelector('#game');
         el.playButton = document.querySelector('#play');
         el.output = document.querySelector('#output');
@@ -271,9 +275,6 @@
         });
         el.scene = document.createElement('div');
         el.scene.id = 'scene';
-        build();
-        evaluateTiles();
-        updatePlayButton();
         document.querySelector('#copy-to-clipboard').addEventListener('click',
             () => {
                 navigator.clipboard.writeText(JSON.stringify(level, null, 2)).then(
@@ -283,9 +284,11 @@
                     }
                 );
             });
+        window.addEventListener('keydown', onKeyDown);
+        window.addEventListener('keyup', onKeyUp);
+        window.addEventListener('keypress', onKeyPress);
+        window.addEventListener('hashchange', onHashChanged);
+        onHashChanged();
     }
     window.addEventListener('load', main);
-    window.addEventListener('keydown', onKeyDown);
-    window.addEventListener('keyup', onKeyUp);
-    window.addEventListener('keypress', onKeyPress);
 })(window);
