@@ -51,7 +51,8 @@
         localStorage.setItem(STORAGE_KEY, JSON.stringify(level));
     }
     function updatePlayButton() {
-        el.playButton.href = `index.html#level=${btoa(JSON.stringify(level))}`;
+        let playableLevel = level.map(row => row.replaceAll(BREADCRUMB, ICE));
+        el.playButton.href = `index.html#level=${btoa(JSON.stringify(playableLevel))}`;
         el.output.value = level.join('\n');
     }
     function evaluateTiles() {
