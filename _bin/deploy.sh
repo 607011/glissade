@@ -8,7 +8,16 @@ rsync -rav --delete src/static deploy
 
 for HTMLFILE in index.html editor.html
 do
-    jsmin <src/$HTMLFILE >deploy/$HTMLFILE
+    html-minifier \
+        --collapse-whitespace \
+        --remove-comments \
+        --remove-optional-tags \
+        --remove-redundant-attributes \
+        --remove-script-type-attributes \
+        --remove-tag-whitespace \
+        --minify-css true \
+        --minify-js true \
+        <src/$HTMLFILE >deploy/$HTMLFILE
 done
 
 for JSFILE in index.js editor.js
