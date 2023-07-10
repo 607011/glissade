@@ -20,9 +20,18 @@ do
         <src/$HTMLFILE >deploy/$HTMLFILE
 done
 
-for JSFILE in index.js editor.js
+for JSFILE in editor.js
 do
     uglifyjs --compress --mangle < src/$JSFILE > deploy/$JSFILE
+done
+
+for JSFILE in index.js
+do
+    javascript-obfuscator src/$JSFILE \
+        --split-strings true \
+        --force-transform-strings 'Q2hpbGx5RGVyUGluZ3Vpbg==' \
+        --debug-protection true \
+        --output deploy/$JSFILE
 done
 
 rsync -rav --delete deploy/* $REMOTE
