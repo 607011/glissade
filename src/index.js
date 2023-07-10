@@ -7,127 +7,19 @@
     const PLAYER = 'P';
     const HOLE = 'O';
     const COIN = '$';
-    const GAMES = {
-        1: [
-            '################',
-            '##            ##',
-            '#              #',
-            '# #            #',
-            '#  #  #        #',
-            '#              #',
-            '#       #X     #',
-            '#    #    #    #',
-            '#      #       #',
-            '#            # #',
-            '#   #       #  #',
-            '## ##         ##',
-            '#  ##          #',
-            '#   P #        #',
-            '#  #         # #',
-            '################'
-        ],
-        2: [
-            '################',
-            '##     #       #',
-            '#    #       # #',
-            '# #      #     #',
-            '#              #',
-            '#        #     #',
-            '#            # #',
-            '#       #      #',
-            '#     P##      #',
-            '#      ##   # ##',
-            '#       ##    ##',
-            '#  #  # ##     #',
-            '#     ##       #',
-            '#      #   X # #',
-            '#   #  #       #',
-            '################'
-        ],
-        3: [
-            '################',
-            '#  # #        ##',
-            '#       #      #',
-            '#        #  X  #',
-            '##            ##',
-            '#   #          #',
-            '##       #     #',
-            '#            # #',
-            '#      #    #  #',
-            '###          # #',
-            '#    #         #',
-            '#   #      #   #',
-            '#           # ##',
-            '#     #  #     #',
-            '#P   ##    #   #',
-            '################'
-        ],
-        4: [
-            "################X###############",
-            "# #          # #               #",
-            "#              #               #",
-            "#              #          #    #",
-            "#      O                     # #",
-            "#        #          #          #",
-            "##                   O   #     #",
-            "#      #    #              #   #",
-            "#                       #      #",
-            "#         #                    #",
-            "#     #                        #",
-            "#                          #   #",
-            "#  #            ####           #",
-            "#                  #           #",
-            "#                  #           #",
-            "#              P   #      #    #",
-            "#                  #           #",
-            "################################"
-        ],
-        5: [
-            '################',
-            '# #          # #',
-            '##    #    #  ##',
-            '#    #         #',
-            '# # #    #     #',
-            '#   # #      # #',
-            '#      #    #  #',
-            '#  #  P#X #    #',
-            '##   # #   #  ##',
-            '#   #   #  #   #',
-            '#     #        #',
-            '#  # #      #  #',
-            '# #  #    #    #',
-            '#   #   #   ## #',
-            '##     ##    # #',
-            '################'
-        ],
-        6: [
-            "##############",
-            "#          # #",
-            "#  #  #      X",
-            "#           P#",
-            "# ##     #   #",
-            "#    #       #",
-            "##          ##",
-            "#   #        #",
-            "#     #      #",
-            "# # #   #    #",
-            "#    #    #  #",
-            "#     ####   #",
-            "##          ##",
-            "##############"
-        ],
-    };
+    const DEFAULT_GAME = ["####################", "#   # # #          #", "#      ###  #     O#", "#       #   #  #   #", "##  # #  # #       #", "#       #    #   ###", "#      # #  #      #", "##      #       ## #", "#    ### ### ## #  #", "#    #P #          #", "# O               ##", "#       #          #", "#        # #       #", "#   #   #   #    # #", "#    #   #  #  #   #", "#  #    #      ## ##", "#     #  #    ##   #", "#     # # #        X", "# #  ##    #    #  #", "####################"];
     const el = {};
     let player = {
         x: 0,
         y: 0,
         el: null,
         moves: [],
+        distance: 0
     };
-    let levelNum = 1;
     let level, width, height;
     let holes = [];
     let isMoving = false;
+    let exitReached = false;
     function placePlayerAt(x, y) {
         player.x = x;
         player.y = y;
@@ -145,19 +37,22 @@
     function updateMoveCounter() {
         el.moveCount.textContent = player.moves.length;
         el.moveCount.setAttribute('data-moves', `${player.moves.join('')}`);
+        el.moves.textContent = `${player.moves.join('')}`;
+        el.distance.textContent = player.distance;
     }
     function move(dx, dy) {
-        if (isMoving)
+        if (isMoving || exitReached)
             return;
         let { x, y } = player;
         while ([ICE, COIN].includes(level[y + dy][x + dx])) {
             x += dx;
             y += dy;
         }
-        const exitReached = level[y + dy][x + dx] === EXIT;
+        exitReached = level[y + dy][x + dx] === EXIT;
         const holeEntered = level[y + dy][x + dx] === HOLE;
         const dist = Math.abs((x - player.x) + (y - player.y));
         if (exitReached || holeEntered || dist > 0) {
+            player.distance += dist;
             isMoving = true;
             player.el.style.transitionDuration = `${dist * 100}ms`;
             if (exitReached || holeEntered) {
@@ -247,7 +142,7 @@
         }
     }
     function onHashChanged() {
-        let levelData = [...GAMES[levelNum]];
+        let levelData = [...DEFAULT_GAME];
         if (window.location.hash) {
             const hash = window.location.hash.substring(1);
             const params = hash.split(';');
@@ -303,16 +198,21 @@
         width = level[0].length;
         height = level.length;
         player.moves = [];
+        player.distance = 0;
         updateMoveCounter();
         el.scene = generateScene();
         el.game.replaceChildren(el.scene, player.el);
         replacePlayerWithIceTile();
     }
+    function reset() {
+        exitReached = false;
+        onHashChanged();
+    }
     function main() {
         el.game = document.querySelector('#game');
         el.game.addEventListener('click', onClick);
-        el.level = document.querySelector('#level-num');
-        el.score = document.querySelector('#score');
+        el.distance = document.querySelector('#distance');
+        el.moves = document.querySelector('#moves');
         el.moveCount = document.querySelector('#move-count');
         player.el = document.createElement('span');
         player.el.className = 'tile penguin';
@@ -331,8 +231,7 @@
         document.querySelector('.control.left').addEventListener('click', () => {
             window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'a' }));
         });
-        el.level.textContent = levelNum;
-        onHashChanged();
+        reset();
     }
     window.addEventListener('load', main);
 })(window);
