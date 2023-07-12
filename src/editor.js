@@ -22,10 +22,10 @@
             this.history.pop().undo();
         }
     }
-    const STORAGE_KEY = 'rutschpartie.level';
+    const STORAGE_KEY_LEVEL = 'rutschpartie.level';
+    const STORAGE_KEY_WIDTH = 'rutschpartie.width';
+    const STORAGE_KEY_HEIGHT = 'rutschpartie.height';
     const TILE_SIZE = 32;
-    const DEFAULT_WIDTH = 16;
-    const DEFAULT_HEIGHT = 16;
     const ICE = ' ';
     const ROCK = '#';
     const EXIT = 'X';
@@ -44,7 +44,7 @@
     }
     function saveLevel(rows) {
         level = rows;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(level));
+        localStorage.setItem(STORAGE_KEY_LEVEL, JSON.stringify(level));
     }
     function updatePlayButton() {
         let playableLevel = level.map(row => row.replaceAll(BREADCRUMB, ICE));
@@ -238,17 +238,17 @@
             if (w > 3 && h > 3) {
                 level = generateEmptyLevel(w, h);
             }
-            else if (localStorage.hasOwnProperty(STORAGE_KEY)) {
+            else if (localStorage.hasOwnProperty(STORAGE_KEY_LEVEL)) {
                 try {
-                    level = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                    level = JSON.parse(localStorage.getItem(STORAGE_KEY_LEVEL));
                 }
                 catch (e) {
-                    alert(`Cannot parse JSON data in localStorage["${STORAGE_KEY}"]`);
+                    alert(`Cannot parse JSON data in localStorage["${STORAGE_KEY_LEVEL}"]`);
                 }
             }
         }
         if (level === null) {
-            level = generateEmptyLevel(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+            level = generateEmptyLevel(parseInt(el.width.value), parseInt(el.height.value));
         }
         build();
         evaluateTiles();
@@ -273,8 +273,31 @@
                 selectedItem = e.target.value;
             });
         });
+        el.width = document.querySelector('input[name="chosen-width"]');
+        el.width.addEventListener('change', e => {
+            localStorage.setItem(STORAGE_KEY_WIDTH, e.target.value);
+        });
+        if (localStorage.hasOwnProperty(STORAGE_KEY_WIDTH)) {
+            el.width.value = localStorage.getItem(STORAGE_KEY_WIDTH);
+        }
+        el.height = document.querySelector('input[name="chosen-height"]');
+        el.height.addEventListener('change', e => {
+            localStorage.setItem(STORAGE_KEY_HEIGHT, e.target.value);
+        });
+        if (localStorage.hasOwnProperty(STORAGE_KEY_HEIGHT)) {
+            el.height.value = localStorage.getItem(STORAGE_KEY_HEIGHT);
+        }
         el.scene = document.createElement('div');
         el.scene.id = 'scene';
+        document.querySelector('#clear').addEventListener('click',
+            () => {
+                if (confirm('Do you really want to discard your work and begin from scratch?')) {
+                    level = generateEmptyLevel(parseInt(el.width.value), parseInt(el.height.value));
+                }
+                build();
+                evaluateTiles();
+                updatePlayButton();
+            });
         document.querySelector('#copy-to-clipboard').addEventListener('click',
             () => {
                 navigator.clipboard.writeText(JSON.stringify(level, null, 2)).then(

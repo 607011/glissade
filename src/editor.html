@@ -15,6 +15,7 @@
         html,
         body {
             background-color: #440B7D;
+            color: #f8f8f8;
             font-family: Arial, Helvetica, sans-serif;
         }
 
@@ -117,6 +118,10 @@
             outline: 2px solid #ff1010;
         }
 
+        input[type="number"] {
+            padding: 4px;
+        }
+
         #output {
             font-family: 'Courier New', Courier, monospace;
         }
@@ -170,6 +175,14 @@
             style="margin: 10px; display: flex; align-content: space-between; justify-content: space-between; flex-direction: column;">
             <span><a href="index.html" target="_blank" id="play">▶️ Play game in new window</a></span>
             <textarea id="output"></textarea>
+            <div>
+                <button id="clear">Clear</button>
+                <div style="margin-top: 10px;">
+                    <input type="number" name="chosen-width" size="4" min="5" value="20">
+                    &times;
+                    <input type="number" name="chosen-height" size="4" min="5" value="20">
+                </div>
+            </div>
             <button id="copy-to-clipboard">Copy JSON data to clipboard</button>
         </div>
     </div>
