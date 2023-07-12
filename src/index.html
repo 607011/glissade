@@ -1,15 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="keywords" content="game">
-    <meta name="description" content="Mini game inspired by Pokémon Crystal Ice Path">
-    <meta property="og:title" content="Glissade - Lead Chilly, the penguin, to the exit.">
-    <meta property="og:description" content="Mini game inspired by Pokémon Crystal Ice Path">
-    <meta property="og:type" content="website">
-    <title>Glissade</title>
+    <title>Rutschpartie</title>
     <style>
         @font-face {
             font-family: 'VT323';
@@ -67,10 +62,6 @@
             align-content: space-between;
         }
 
-        #score {
-            width: fit-content;
-        }
-
         #controls {
             grid-area: controls;
             display: grid;
@@ -78,6 +69,10 @@
             grid-template-columns: repeat(3, 32px);
             grid-template-rows: repeat(3, 32px);
             width: fit-content;
+        }
+
+        #moves {
+            overflow-wrap: anywhere;
         }
 
         .control {
@@ -127,8 +122,8 @@
     <div id="main-container">
         <div id="game-container">
             <div id="stats">
-                <div>Distance <span id="distance">0</span></div>
-                <div>Moves <span id="move-count">0</span></div>
+                <div>Distanz <span id="distance">0</span></div>
+                <div>Züge <span id="move-count">0</span></div>
             </div>
             <div id="game"></div>
             <div id="moves"></div>

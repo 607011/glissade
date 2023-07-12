@@ -1,12 +1,18 @@
 (function (window) {
     "use strict";
+    const RC4_KEY = new Uint8Array([13, 150, 44, 194, 96, 146, 143, 208]);
+    const PASSPHRASE = new Uint8Array([
+        62, 56, 139, 247, 238, 182, 56,
+        217, 99, 142, 118, 67, 73, 204,
+        128, 204, 131, 18, 19, 22, 241,
+        135, 96, 147, 71, 116
+    ]);
     const TILE_SIZE = 32;
     const ICE = ' ';
     const ROCK = '#';
     const EXIT = 'X';
     const PLAYER = 'P';
     const HOLE = 'O';
-    const COIN = '$';
     const DEFAULT_GAME = ["####################", "#   # # #          #", "#      ###  #     O#", "#       #   #  #   #", "##  # #  # #       #", "#       #    #   ###", "#      # #  #      #", "##      #       ## #", "#    ### ### ## #  #", "#    #P #          #", "# O               ##", "#       #          #", "#        # #       #", "#   #   #   #    # #", "#    #   #  #  #   #", "#  #    #      ## ##", "#     #  #    ##   #", "#     # # #        X", "# #  ##    #    #  #", "####################"];
     const el = {};
     let player = {
@@ -20,6 +26,35 @@
     let holes = [];
     let isMoving = false;
     let exitReached = false;
+    async function base64_arraybuffer(data) {
+        const base64url = await new Promise(r => {
+            const reader = new FileReader();
+            reader.onload = () => r(reader.result);
+            reader.readAsDataURL(new Blob([data]));
+        })
+        return base64url.substring(base64url.indexOf(',') + 1);
+    }
+    function rc4(msg, key) {
+        console.assert(msg instanceof Uint8Array);
+        console.assert(key instanceof Uint8Array);
+        // setup S-box from key
+        let S = [...new Uint8Array(256).keys()];
+        let j = 0;
+        for (let i = 0; i < 256; ++i) {
+            j = (j + S[i] + key[i % key.length]) % 256;
+            [S[i], S[j]] = [S[j], S[i]];
+        }
+        let i = 0;
+        j = 0;
+        let res = new Uint8Array(msg.length);
+        for (let k = 0; k < msg.length; ++k) {
+            i = (i + 1) % 256;
+            j = (j + S[i]) % 256;
+            [S[i], S[j]] = [S[j], S[i]];
+            res[k] = msg[k] ^ S[(S[i] + S[j]) % 256];
+        }
+        return res;
+    }
     function placePlayerAt(x, y) {
         player.x = x;
         player.y = y;
@@ -32,7 +67,24 @@
         placePlayerAt(otherHole.x, otherHole.y);
     }
     function onExitReached() {
-        alert('Yippie yeah!');
+        if (player.moves.length === 26) {
+            if (player.distance === 90) {
+                base64_arraybuffer(rc4(PASSPHRASE, RC4_KEY)).then(result => console.log(result));
+                alert('Yippie yeah! Zur Belohnung gibt es ein Passwort. Es ist hier irgendwo.');
+            }
+            else if (player.distance > 90) {
+                alert('Hervorragend! Sie haben das Ziel mit der minimalen Zuganzahl erreicht. Nun müssen Sie nur noch die Route mit der kürzesten Distanz finden. Auf ein Neues!');
+                reset();
+            }
+        }
+        else if (player.moves.length > 26) {
+            alert('Prima, Sie haben das Ziel erreicht, aber nicht mit der minimalen Anzahl an Zügen. Probieren Sie es noch einmal.');
+            reset();
+        }
+        else {
+            alert('Tapfer, tapfer! Aber nicht der richtige Weg. Er ist zu lang und/oder hat zu viele Windungen. Nächster Versuch …');
+            reset();
+        }
     }
     function updateMoveCounter() {
         el.moveCount.textContent = player.moves.length;
@@ -44,7 +96,7 @@
         if (isMoving || exitReached)
             return;
         let { x, y } = player;
-        while ([ICE, COIN].includes(level[y + dy][x + dx])) {
+        while (level[y + dy][x + dx] === ICE) {
             x += dx;
             y += dy;
         }
@@ -141,20 +193,6 @@
             }
         }
     }
-    function onHashChanged() {
-        let levelData = [...DEFAULT_GAME];
-        if (window.location.hash) {
-            const hash = window.location.hash.substring(1);
-            const params = hash.split(';');
-            for (const param of params) {
-                const [key, value] = param.split('=');
-                if (key === 'level' && value.length > 0) {
-                    levelData = JSON.parse(atob(value));
-                }
-            }
-        }
-        setLevel(levelData);
-    }
     function generateScene() {
         holes = [];
         const scene = document.createElement('div');
@@ -197,6 +235,7 @@
         level = levelData;
         width = level[0].length;
         height = level.length;
+        el.moves.style.width = `${width * TILE_SIZE + 4}px`;
         player.moves = [];
         player.distance = 0;
         updateMoveCounter();
@@ -206,7 +245,7 @@
     }
     function reset() {
         exitReached = false;
-        onHashChanged();
+        setLevel([...DEFAULT_GAME]);
     }
     function main() {
         el.game = document.querySelector('#game');
@@ -218,7 +257,6 @@
         player.el.className = 'tile penguin';
         window.addEventListener('keydown', onKeyPressed);
         window.addEventListener('keypress', onKeyPressed);
-        window.addEventListener('hashchange', onHashChanged);
         document.querySelector('.control.up').addEventListener('click', () => {
             window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'w' }));
         });
