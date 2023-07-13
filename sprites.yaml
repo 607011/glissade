@@ -1,0 +1,14 @@
+tile:
+  width: 32
+  height: 32
+src:
+  - _raw/ice.png
+  - _raw/marker.png
+  - _raw/rock.png
+  - _raw/hole.png
+  - _raw/penguin.png
+  - _raw/exit.png
+order: vertically
+css: src/tiles.css
+
+
