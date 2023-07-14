@@ -1,6 +1,6 @@
 # Glissade
 
-*A minigame inspired by Pokémon Crystal Ice Path*
+*A mini-game inspired by Pokémon Crystal Ice Path*
 
 
 ## Game
