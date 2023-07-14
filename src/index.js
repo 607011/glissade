@@ -1,129 +1,234 @@
 (function (window) {
     "use strict";
-    const RC4_KEY = new Uint8Array([13, 150, 44, 194, 96, 146, 143, 208]);
-    const PASSPHRASE = new Uint8Array([
-        62, 56, 139, 247, 238, 182, 56,
-        217, 99, 142, 118, 67, 73, 204,
-        128, 204, 131, 18, 19, 22, 241,
-        135, 96, 147, 71, 116
-    ]);
-    const TILE_SIZE = 32;
-    const ICE = ' ';
-    const ROCK = '#';
-    const EXIT = 'X';
-    const PLAYER = 'P';
-    const HOLE = 'O';
+
+    // Bézier code
+    // Copyright ©️ 2015 Gaëtan Renaudeau
+    // https://github.com/gre/bezier-easing
+    const NEWTON_ITERATIONS = 4;
+    const NEWTON_MIN_SLOPE = 0.001;
+    const SUBDIVISION_PRECISION = 0.0000001;
+    const SUBDIVISION_MAX_ITERATIONS = 100;
+    const kSplineTableSize = 101;
+    const kSampleStepSize = 1 / (kSplineTableSize - 1);
+    const float32ArraySupported = typeof Float32Array === 'function';
+    function A(aA1, aA2) { return 1 - 3 * aA2 + 3 * aA1; }
+    function B(aA1, aA2) { return 3 * aA2 - 6 * aA1; }
+    function C(aA1) { return 3 * aA1; }
+    function calcBezier(aT, aA1, aA2) { return ((A(aA1, aA2) * aT + B(aA1, aA2)) * aT + C(aA1)) * aT; }
+    function getSlope(aT, aA1, aA2) { return 3 * A(aA1, aA2) * aT * aT + 2 * B(aA1, aA2) * aT + C(aA1); }
+    function binarySubdivide(aX, aA, aB, mX1, mX2) {
+        let currentX, currentT, i = 0;
+        do {
+            currentT = aA + (aB - aA) / 2;
+            currentX = calcBezier(currentT, mX1, mX2) - aX;
+            if (currentX > 0) {
+                aB = currentT;
+            } else {
+                aA = currentT;
+            }
+        } while (Math.abs(currentX) > SUBDIVISION_PRECISION && ++i < SUBDIVISION_MAX_ITERATIONS);
+        return currentT;
+    }
+    function newtonRaphsonIterate(aX, aGuessT, mX1, mX2) {
+        for (let i = 0; i < NEWTON_ITERATIONS; ++i) {
+            let currentSlope = getSlope(aGuessT, mX1, mX2);
+            if (currentSlope === 0.0) {
+                return aGuessT;
+            }
+            let currentX = calcBezier(aGuessT, mX1, mX2) - aX;
+            aGuessT -= currentX / currentSlope;
+        }
+        return aGuessT;
+    }
+    function LinearEasing(x) {
+        return x;
+    }
+    function bezier(mX1, mY1, mX2, mY2) {
+        if (!(0 <= mX1 && mX1 <= 1 && 0 <= mX2 && mX2 <= 1)) {
+            throw new Error('bezier x values must be in [0, 1] range');
+        }
+        if (mX1 === mY1 && mX2 === mY2) {
+            return LinearEasing;
+        }
+        // Precompute samples table
+        let sampleValues = float32ArraySupported ? new Float32Array(kSplineTableSize) : new Array(kSplineTableSize);
+        for (let i = 0; i < kSplineTableSize; ++i) {
+            sampleValues[i] = calcBezier(i * kSampleStepSize, mX1, mX2);
+        }
+        function getTForX(aX) {
+            let intervalStart = 0.0;
+            let currentSample = 1;
+            let lastSample = kSplineTableSize - 1;
+            for (; currentSample !== lastSample && sampleValues[currentSample] <= aX; ++currentSample) {
+                intervalStart += kSampleStepSize;
+            }
+            --currentSample;
+            // Interpolate to provide an initial guess for t
+            let dist = (aX - sampleValues[currentSample]) / (sampleValues[currentSample + 1] - sampleValues[currentSample]);
+            let guessForT = intervalStart + dist * kSampleStepSize;
+            let initialSlope = getSlope(guessForT, mX1, mX2);
+            if (initialSlope >= NEWTON_MIN_SLOPE) {
+                return newtonRaphsonIterate(aX, guessForT, mX1, mX2);
+            }
+            else if (initialSlope === 0.0) {
+                return guessForT;
+            }
+            else {
+                return binarySubdivide(aX, intervalStart, intervalStart + kSampleStepSize, mX1, mX2);
+            }
+        }
+        return function BezierEasing(x) {
+            if (x === 0) {
+                return 0;
+            }
+            if (x === 1) {
+                return 1;
+            }
+            return calcBezier(getTForX(x), mY1, mY2);
+        };
+    };
+    // end of Bézier code
+
+    class State {
+        static Playing = 1;
+        static LevelEnd = 2;
+    };
+
+    class Tile {
+        static ICE = ' ';
+        static ROCK = '#';
+        static EXIT = 'X';
+        static PLAYER = 'P';
+        static COIN = '$';
+        static GOLD = 'G';
+        static HOLE = 'O';
+        static SIZE = 32;
+    };
+
+    const POINTS = {
+        '$': 5,
+        'G': 20,
+    };
     const DEFAULT_GAME = ["####################", "#   # # #          #", "#      ###  #     O#", "#       #   #  #   #", "##  # #  # #       #", "#       #    #   ###", "#      # #  #      #", "##      #       ## #", "#    ### ### ## #  #", "#    #P #          #", "# O               ##", "#       #          #", "#        # #       #", "#   #   #   #    # #", "#    #   #  #  #   #", "#  #    #      ## ##", "#     #  #    ##   #", "#     # # #        X", "# #  ##    #    #  #", "####################"];
     const el = {};
+    const easingWithoutOvershoot = bezier(.34, .87, 1, 1);
+    const easingWithOvershoot = bezier(.34, .87, 1, 1.1);
     let player = {
         x: 0,
         y: 0,
+        dest: { x: 0, y: 0 },
         el: null,
+        score: 0,
         moves: [],
-        distance: 0
+        distance: 0,
     };
-    let level, width, height;
+    let level = [[]];
+    let state;
+    let levelNum = 0;
+    let width = 0;
+    let height = 0;
+    let t0, t1, animationDuration;
+    let tiles = [[]];
     let holes = [];
     let isMoving = false;
     let exitReached = false;
-    async function base64_arraybuffer(data) {
-        const base64url = await new Promise(r => {
-            const reader = new FileReader();
-            reader.onload = () => r(reader.result);
-            reader.readAsDataURL(new Blob([data]));
-        })
-        return base64url.substring(base64url.indexOf(',') + 1);
-    }
-    function rc4(msg, key) {
-        console.assert(msg instanceof Uint8Array);
-        console.assert(key instanceof Uint8Array);
-        // setup S-box from key
-        let S = [...new Uint8Array(256).keys()];
-        let j = 0;
-        for (let i = 0; i < 256; ++i) {
-            j = (j + S[i] + key[i % key.length]) % 256;
-            [S[i], S[j]] = [S[j], S[i]];
-        }
-        let i = 0;
-        j = 0;
-        let res = new Uint8Array(msg.length);
-        for (let k = 0; k < msg.length; ++k) {
-            i = (i + 1) % 256;
-            j = (j + S[i]) % 256;
-            [S[i], S[j]] = [S[j], S[i]];
-            res[k] = msg[k] ^ S[(S[i] + S[j]) % 256];
-        }
-        return res;
-    }
+    let holeEntered = false;
+    let easing = null;
+    const audioCtx = new AudioContext;
+    const fxGainNode = audioCtx.createGain();
+    const exitSound = new Audio('static/sounds/exit.wav');
+    const coinSound = new Audio('static/sounds/coin.wav');
+    const rockSound = new Audio('static/sounds/rock.wav');
+    const teleportSound = new Audio('static/sounds/teleport.wav');
+    const audioSink = audioCtx.destination;
     function placePlayerAt(x, y) {
         player.x = x;
         player.y = y;
-        player.el.style.left = `${TILE_SIZE * x}px`;
-        player.el.style.top = `${TILE_SIZE * y}px`;
+        player.el.style.left = `${Tile.SIZE * x}px`;
+        player.el.style.top = `${Tile.SIZE * y}px`;
+    }
+    function playAudio(sound) {
+        sound.play()
+            .then(e => console.log(e))
+            .catch(e => console.error(e));
     }
     function teleport() {
+        teleportSound.play();
         const otherHole = holes.filter(v => v.x !== player.x && v.y !== player.y)[0];
-        player.el.style.transitionDuration = '0s';
         placePlayerAt(otherHole.x, otherHole.y);
     }
     function onExitReached() {
-        if (player.moves.length === 26) {
-            if (player.distance === 90) {
-                base64_arraybuffer(rc4(PASSPHRASE, RC4_KEY)).then(result => console.log(result));
-                alert('Yippie yeah! Zur Belohnung gibt es ein Passwort. Es ist hier irgendwo.');
-            }
-            else if (player.distance > 90) {
-                alert('Hervorragend! Sie haben das Ziel mit der minimalen Zuganzahl erreicht. Nun müssen Sie nur noch die Route mit der kürzesten Distanz finden. Auf ein Neues!');
-                reset();
-            }
-        }
-        else if (player.moves.length > 26) {
-            alert('Prima, Sie haben das Ziel erreicht, aber nicht mit der minimalen Anzahl an Zügen. Probieren Sie es noch einmal.');
-            reset();
-        }
-        else {
-            alert('Tapfer, tapfer! Aber nicht der richtige Weg. Er ist zu lang und/oder hat zu viele Windungen. Nächster Versuch …');
-            reset();
-        }
+        playAudio(exitSound);
+        el.overlay.classList.remove('hidden');
+    }
+    function rockHit() {
+        playAudio(rockSound);
     }
     function updateMoveCounter() {
         el.moveCount.textContent = player.moves.length;
-        el.moveCount.setAttribute('data-moves', `${player.moves.join('')}`);
-        el.moves.textContent = `${player.moves.join('')}`;
         el.distance.textContent = player.distance;
+    }
+    function animate() {
+        const dt = performance.now() - t0;
+        const f = easing(dt / animationDuration);
+        const dx = f * (player.dest.x - player.x);
+        const dy = f * (player.dest.y - player.y);
+        const x = player.x + Math.round(dx);
+        const y = player.y + Math.round(dy);
+        if (level[y][x] === Tile.COIN) {
+            tiles[y][x].classList.replace('coin', 'ice');
+            level[y] = level[y].substring(0, x) + Tile.ICE + level[y].substring(x + 1);
+            player.score += POINTS[Tile.COIN];
+            el.score.textContent = player.score;
+            playAudio(coinSound);
+        }
+        player.el.style.left = `${Tile.SIZE * (player.x + dx)}px`;
+        player.el.style.top = `${Tile.SIZE * (player.y + dy)}px`;
+        if (performance.now() > t1) {
+            placePlayerAt(player.dest.x, player.dest.y);
+            updateMoveCounter();
+            isMoving = false;
+            if (exitReached) {
+                onExitReached();
+            }
+            else if (holeEntered) {
+                teleport();
+            }
+            else {
+                rockHit();
+            }
+        }
+        else {
+            requestAnimationFrame(animate);
+        }
     }
     function move(dx, dy) {
         if (isMoving || exitReached)
             return;
         let { x, y } = player;
-        while (level[y + dy][x + dx] === ICE) {
+        while ([Tile.ICE, Tile.COIN].includes(level[y + dy][x + dx])) {
             x += dx;
             y += dy;
         }
-        exitReached = level[y + dy][x + dx] === EXIT;
-        const holeEntered = level[y + dy][x + dx] === HOLE;
+        exitReached = level[y + dy][x + dx] === Tile.EXIT;
+        holeEntered = level[y + dy][x + dx] === Tile.HOLE;
         const dist = Math.abs((x - player.x) + (y - player.y));
         if (exitReached || holeEntered || dist > 0) {
             player.distance += dist;
             isMoving = true;
-            player.el.style.transitionDuration = `${dist * 100}ms`;
             if (exitReached || holeEntered) {
-                player.el.style.transitionTimingFunction = 'cubic-bezier(0.7, 0.2, 1, 1)';
-                placePlayerAt(x + dx, y + dy);
+                player.dest.x = x + dx;
+                player.dest.y = y + dy;
+                easing = easingWithoutOvershoot;
             }
             else {
-                player.el.style.transitionTimingFunction = 'cubic-bezier(0.7, 0.2, 1, 1.2)';
-                placePlayerAt(x, y);
+                player.dest = { x, y };
+                easing = easingWithOvershoot;
             }
-            setTimeout(() => {
-                isMoving = false;
-                if (exitReached) {
-                    onExitReached();
-                }
-                if (holeEntered) {
-                    teleport();
-                }
-            }, 33 + 100 * dist);
+            animationDuration = 100 * dist;
+            t0 = performance.now();
+            t1 = t0 + animationDuration;
+            requestAnimationFrame(animate);
         }
     }
     function moveUp() {
@@ -139,7 +244,8 @@
         move(+1, 0);
     }
     function onKeyPressed(e) {
-        const { x, y } = player;
+        if (isMoving)
+            return;
         let move;
         switch (e.key) {
             case 'w':
@@ -167,15 +273,13 @@
                 move = 'R';
                 break;
         }
-        if (move && (x !== player.x || y !== player.y)) {
-            placePlayerAt(player.x, player.y);
+        if (move) {
             player.moves.push(move);
-            updateMoveCounter();
         }
     }
     function onClick(e) {
-        const dx = (e.target.offsetLeft / TILE_SIZE) - player.x;
-        const dy = (e.target.offsetTop / TILE_SIZE) - player.y;
+        const dx = (e.target.offsetLeft / Tile.SIZE) - player.x;
+        const dy = (e.target.offsetTop / Tile.SIZE) - player.y;
         if (Math.abs(dx) > Math.abs(dy)) {
             if (dx > 0) {
                 window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'd' }));
@@ -192,50 +296,59 @@
                 window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'w' }));
             }
         }
+        checkAudio();
     }
     function generateScene() {
-        holes = [];
         const scene = document.createElement('div');
-        scene.style.gridTemplateColumns = `repeat(${width}, ${TILE_SIZE}px)`;
-        scene.style.gridTemplateRows = `repeat(${height}, ${TILE_SIZE}px)`;
+        scene.style.gridTemplateColumns = `repeat(${width}, ${Tile.SIZE}px)`;
+        scene.style.gridTemplateRows = `repeat(${height}, ${Tile.SIZE}px)`;
+        holes = [];
+        tiles = [];
         for (let y = 0; y < level.length; ++y) {
             const row = level[y];
+            tiles.push([]);
             for (let x = 0; x < row.length; ++x) {
                 const item = row[x];
                 const tile = document.createElement('span');
                 tile.className = 'tile';
                 switch (item) {
-                    case ROCK:
+                    case Tile.ROCK:
                         tile.classList.add('rock');
                         break;
-                    case EXIT:
+                    case Tile.COIN:
+                        tile.classList.add('coin');
+                        break;
+                    case Tile.GOLD:
+                        tile.classList.add('gold');
+                        break;
+                    case Tile.EXIT:
                         tile.classList.add('exit');
                         break;
-                    case HOLE:
+                    case Tile.HOLE:
                         tile.classList.add('hole');
                         holes.push({ x, y });
                         break;
-                    case PLAYER:
+                    case Tile.PLAYER:
                         placePlayerAt(x, y);
                     // fall-through
-                    case ICE:
+                    case Tile.ICE:
                     default:
                         tile.classList.add('ice');
                         break;
                 }
                 scene.appendChild(tile);
+                tiles[y].push(tile);
             }
         }
         return scene;
     }
     function replacePlayerWithIceTile() {
-        level[player.y] = level[player.y].substring(0, player.x) + ICE + level[player.y].substring(player.x + 1);
+        level[player.y] = level[player.y].substring(0, player.x) + Tile.ICE + level[player.y].substring(player.x + 1);
     }
     function setLevel(levelData) {
         level = levelData;
         width = level[0].length;
         height = level.length;
-        el.moves.style.width = `${width * TILE_SIZE + 4}px`;
         player.moves = [];
         player.distance = 0;
         updateMoveCounter();
@@ -244,15 +357,51 @@
         replacePlayerWithIceTile();
     }
     function reset() {
+        state = State.Playing;
         exitReached = false;
-        setLevel([...DEFAULT_GAME]);
+        let levelData = [...DEFAULT_GAME];
+        if (window.location.hash) {
+            const hash = window.location.hash.substring(1);
+            const params = hash.split(';');
+            for (const param of params) {
+                const [key, value] = param.split('=');
+                if (key === 'level' && value.length > 0) {
+                    levelData = JSON.parse(atob(value));
+                }
+            }
+        }
+        setLevel(levelData);
+    }
+    function checkAudio() {
+        if (navigator.getAutoplayPolicy('mediaelement') === 'allowed') {
+            el.loudspeaker.classList.replace('speaker-muted', 'speaker');
+        }
+        else {
+            el.loudspeaker.classList.replace('speaker', 'speaker-muted');
+        }
+    }
+    function setupAudio() {
+        checkAudio();
+        fxGainNode.connect(audioSink);
+        fxGainNode.gain.value = 0.1;
+        const exitSource = audioCtx.createMediaElementSource(exitSound);
+        const coinSource = audioCtx.createMediaElementSource(coinSound);
+        const rockSource = audioCtx.createMediaElementSource(rockSound);
+        const teleportSource = audioCtx.createMediaElementSource(teleportSound);
+        exitSource.connect(fxGainNode);
+        rockSource.connect(fxGainNode);
+        coinSource.connect(fxGainNode);
+        teleportSource.connect(fxGainNode);
     }
     function main() {
         el.game = document.querySelector('#game');
         el.game.addEventListener('click', onClick);
+        el.score = document.querySelector('#score');
         el.distance = document.querySelector('#distance');
-        el.moves = document.querySelector('#moves');
         el.moveCount = document.querySelector('#move-count');
+        el.overlay = document.querySelector('#overlay');
+        el.loudspeaker = document.querySelector('#loudspeaker');
+        el.loudspeaker.addEventListener('click', checkAudio);
         player.el = document.createElement('span');
         player.el.className = 'tile penguin';
         window.addEventListener('keydown', onKeyPressed);
@@ -270,6 +419,7 @@
             window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'a' }));
         });
         reset();
+        setupAudio();
     }
     window.addEventListener('load', main);
 })(window);

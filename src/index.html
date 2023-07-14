@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="tiles.css">
-    <title>Rutschpartie</title>
+    <title>Chilly</title>
     <style>
         @font-face {
             font-family: 'VT323';
@@ -33,6 +33,26 @@
             justify-content: center;
             align-items: center;
             align-content: center;
+        }
+
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            opacity: 0.7;
+            background-color: #000;
+        }
+
+        .dialog {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            min-height: 100vh;
+            padding: 10px;
+
         }
 
         #game-container {
@@ -82,7 +102,17 @@
 
         .penguin {
             position: absolute;
-            transition-property: top, left;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #menu {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-content: space-between;
         }
     </style>
 </head>
@@ -90,12 +120,16 @@
 <body>
     <div id="main-container">
         <div id="game-container">
+            <div id="menu">
+                <span class="tile speaker-muted" id="loudspeaker" title="Enable audio"></span>
+                <span class="tile restart" id="restart" title="Restart level"></span>
+            </div>
             <div id="stats">
-                <div>Distanz <span id="distance">0</span></div>
-                <div>Züge <span id="move-count">0</span></div>
+                <div>Distance <span id="distance" title="distance">0</span></div>
+                <div>Score <span id="score" title="score">0</span></div>
+                <div>Moves <span id="move-count" title="# moves">0</span></div>
             </div>
             <div id="game"></div>
-            <div id="moves"></div>
         </div>
         <div id="controls">
             <div></div>
@@ -109,7 +143,12 @@
             <div></div>
         </div>
     </div>
+    <div id="overlay" class="hidden"></div>
+    <div style="display: none">
+        <div id="gratulation"></div>
+    </div>
     <script async src="index.js"></script>
+    <audio autoplay="true" src="static/sounds/rock.wav"></audio>
 </body>
 
 </html>
