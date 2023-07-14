@@ -29,6 +29,8 @@
     const ICE = ' ';
     const ROCK = '#';
     const EXIT = 'X';
+    const COIN = '$';
+    const GOLD = 'G';
     const PLAYER = 'P';
     const HOLE = 'O';
     const BREADCRUMB = '.';
@@ -61,6 +63,12 @@
             }
             else if (tile.classList.contains('penguin')) {
                 row += PLAYER;
+            }
+            else if (tile.classList.contains('coin')) {
+                row += COIN;
+            }
+            else if (tile.classList.contains('gold')) {
+                row += GOLD;
             }
             else if (tile.classList.contains('exit')) {
                 row += EXIT;
@@ -98,6 +106,9 @@
                         break;
                     case HOLE:
                         tile.classList.add('hole');
+                        break;
+                    case COIN:
+                        tile.classList.add('coin');
                         break;
                     case EXIT:
                         tile.classList.add('exit');
@@ -139,7 +150,7 @@
     }
     function onPasted(e) {
         e.preventDefault();
-        el.output.value = (e.clipboardData || window.clipboardData).getData('text');
+        el.output.value = e.clipboardData.getData('text');
         const levelData = el.output.value.split(/\n/g);
         saveLevel(levelData);
         updatePlayButton();
@@ -163,6 +174,13 @@
             case 'i':
             case ' ':
                 newSelectedItem = 'ice';
+                break;
+            case '$':
+            case 'c':
+                newSelectedItem = 'coin';
+                break;
+            case 'g':
+                newSelectedItem = 'gold';
                 break;
             case 'o':
                 newSelectedItem = 'hole';
