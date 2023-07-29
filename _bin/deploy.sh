@@ -4,7 +4,9 @@ source .env
 
 mkdir -p deploy
 
-rsync -rav --delete src/static deploy
+convert _raw/penguin-16x16.png -define png:compression-filter=4 -define png:compression-level=9 -define png:compression-strategy=4 src/static/images/favicon.png
+
+rsync -rav --exclude=*.wav --exclude=.DS_Store --delete src/static deploy
 
 for HTMLFILE in index.html editor.html tiles.css
 do
@@ -27,9 +29,11 @@ done
 
 for JSFILE in index.js
 do
+    # javascript-obfuscator src/$JSFILE \
+    #     --split-strings true \
+    #     --debug-protection true \
+    #     --output deploy/$JSFILE
     javascript-obfuscator src/$JSFILE \
-        --split-strings true \
-        --debug-protection true \
         --output deploy/$JSFILE
 done
 

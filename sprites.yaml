@@ -2,15 +2,27 @@ tile:
   width: 32
   height: 32
 src:
+  - _raw/empty.png
   - _raw/ice.png
   - _raw/marker.png
   - _raw/rock.png
   - _raw/hole.png
   - _raw/penguin.png
+  - _raw/penguin-left.png
+  - _raw/penguin-right.png
+  - _raw/penguin-up.png
+  - _raw/penguin-down.png
   - _raw/exit.png
   - _raw/coin.png
+  - _raw/coin-no-bg.png
   - _raw/speaker.png
   - _raw/speaker-muted.png
   - _raw/restart.png
+  - _raw/star.png
+  - _raw/star-pale.png
+  - _raw/arrow-up.png
+  - _raw/arrow-down.png
+  - _raw/arrow-left.png
+  - _raw/arrow-right.png
 order: vertically
-css: src/tiles.css
+output: src/tiles.css
