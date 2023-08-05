@@ -185,6 +185,7 @@
         updatePlayButton();
         build();
         removeHash();
+        solve();
     }
     function onKeyPress(e) {
         if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) {
