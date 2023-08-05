@@ -10,8 +10,14 @@
     <title>Chilly</title>
     <script async src="static/js/howler.core.min.js"></script>
     <script async src="static/js/bezier.min.js"></script>
+    <script async src="chilly.js"></script>
     <script async src="index.js"></script>
     <style>
+        :root {
+            --text-color: #000;
+            --background-color: #B0E8F8;
+        }
+
         @font-face {
             font-family: 'VT323';
             src: url('static/fonts/VT323-Regular.ttf') format('truetype');
@@ -26,7 +32,8 @@
 
         html,
         body {
-            background-color: #B0E8F8;
+            background-color: var(--background-color);
+            color: var(--text-color);
             font-family: 'VT323', monospace;
             font-size: 32px;
         }
@@ -42,13 +49,13 @@
         }
 
         #overlay {
+            background-color: black;
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            opacity: 0.7;
-            background-color: #000;
+            opacity: 0.4;
             z-index: 1000;
         }
 
@@ -59,12 +66,11 @@
             right: 0;
             bottom: 0;
             background-color: transparent;
-            z-index: 1000;
+            z-index: 1004;
         }
 
         .dialog {
             opacity: unset;
-            color: black;
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
@@ -75,11 +81,10 @@
         }
 
         .dialog>div {
-            background-color: #B0E8F8;
-            border: 5px solid #000;
+            background-color: var(--background-color);
+            border: 5px solid var(--background-color);
             padding: 20px;
             cursor: pointer;
-            border: 6px solid black;
             margin: 0 20%;
             box-sizing: content-box;
         }
@@ -113,7 +118,7 @@
         .star.pulse {
             animation-name: star-pulse;
             animation-duration: 340ms;
-            animation-timing-function: cubic-bezier(.21,.66,.9,1.1);
+            animation-timing-function: cubic-bezier(.21, .66, .9, 1.1);
             animation-fill-mode: both;
             animation-iteration-count: 1;
         }
@@ -122,9 +127,11 @@
             0% {
                 transform: scale(1);
             }
+
             50% {
                 transform: scale(2);
             }
+
             100% {
                 transform: scale(1);
             }
@@ -139,7 +146,7 @@
             position: relative;
             padding: 2px;
             width: fit-content;
-            border: 2px solid #440B7D;
+            border: 3px solid #440B7D;
         }
 
         #game>div {
@@ -151,7 +158,7 @@
         }
 
         #level-stats,
-        #total-stats {
+        #extras {
             margin: 6px 0 0 6px;
             display: flex;
             flex-direction: row;
@@ -190,6 +197,41 @@
             justify-content: space-between;
             align-content: space-between;
         }
+
+        .level-list {
+            text-align: left;
+            overflow-x: hidden;
+            overflow-y: auto;
+            white-space: pre;
+        }
+
+        .level-list .marked {
+            background-color: var(--text-color);
+            color: var(--background-color);
+        }
+
+        #extras {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-content: space-between;
+            width: max-content;
+        }
+
+        button {
+            padding: 5px;
+            height: 32px;
+            border-radius: 0;
+            border: 2px solid var(--text-color);
+            cursor: pointer;
+        }
+
+        .hint {
+            z-index: 1002;
+            position: inherit;
+            opacity: 0.7;
+        }
+
     </style>
 </head>
 
@@ -199,7 +241,7 @@
             <div id="menu">
                 <span class="tile speaker-muted" id="loudspeaker" title="Enable audio"></span>
                 <span id="level-num"></span>
-                <span class="tile restart" id="restart" title="Restart level"></span>
+                <span class="tile hamburger" id="choose-level" title="Choose level"></span>
             </div>
             <div id="level-stats">
                 <div>Total <span id="total-score" title="total score">0</span></div>
@@ -207,6 +249,10 @@
                 <div>Moves <span id="move-count" title="# moves">0</span></div>
             </div>
             <div id="game"></div>
+            <div id="extras">
+                <button id="help">Help!</button>
+                <span id="path"></span>
+            </div>
         </div>
         <div id="controls" class="hidden">
             <div class="tile empty"></div>
@@ -226,7 +272,8 @@
     <template id="splash">
         <div class="dialog">
             <div>
-                <div>Chilly, the penguin, needs your help! Guide him to the green exit fields by pushing him around!</div>
+                <div>Chilly, the penguin, needs your help. Guide him to the green exit fields by pushing him around!
+                </div>
                 <div>Find the routes with the least moves.</div>
                 <div class="pulsating" data-command="proceed">Tap here or [SPACE] to start the glissade</div>
             </div>
@@ -242,8 +289,17 @@
                     <span class="tile star-pale"></span>
                 </div>
                 <div>You earned <span class="points-earned"></span> points</div>
-                <div class="pulsating" data-command="proceed">Tap here or [SPACE] to continue with level <span></span></div>
-                <div class="pulsating" data-command="replay">Tap here or [R] to replay current level</div>
+                <div class="pulsating" data-command="proceed">Tap here or [SPACE] to continue with level <span></span>
+                </div>
+                <div class="pulsating" data-command="replay">Tap here or [R] to replay this level</div>
+            </div>
+        </div>
+    </template>
+    <template id="settings">
+        <div class="dialog">
+            <div>
+                <div>Choose level:</div>
+                <div class="level-list"></div>
             </div>
         </div>
     </template>

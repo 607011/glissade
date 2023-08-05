@@ -20,9 +20,14 @@ src:
   - _raw/restart.png
   - _raw/star.png
   - _raw/star-pale.png
+  - _raw/hamburger.png
   - _raw/arrow-up.png
   - _raw/arrow-down.png
   - _raw/arrow-left.png
   - _raw/arrow-right.png
+  - _raw/hint-up.png
+  - _raw/hint-down.png
+  - _raw/hint-left.png
+  - _raw/hint-right.png
 order: vertically
 output: src/tiles.css

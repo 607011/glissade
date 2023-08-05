@@ -95,7 +95,22 @@
             border-radius: 3px;
             cursor: pointer;
         }
+
+        .hint {
+            z-index: 1002;
+            position: inherit;
+            opacity: 0.7;
+        }
+
+        #sidebar {
+            margin: 10px;
+            display: flex;
+            align-content: space-between;
+            justify-content: space-between;
+            flex-direction: column;
+        }
     </style>
+    <script async src="chilly.js"></script>
     <script async src="editor.js"></script>
 </head>
 
@@ -104,6 +119,10 @@
         <div>
             <div style="margin: 10px">
                 <form id="item-form" name="itemForm">
+                    <label>
+                        <input name="item" type="radio" value="empty" />
+                        <span class="tile empty" title="empty"></span>
+                    </label>
                     <label>
                         <input name="item" type="radio" value="marker" />
                         <span class="tile marker" title="[m]arker"></span>
@@ -135,9 +154,9 @@
                 </form>
             </div>
             <div id="game"></div>
+            <div id="path"></div>
         </div>
-        <div
-            style="margin: 10px; display: flex; align-content: space-between; justify-content: space-between; flex-direction: column;">
+        <div id="sidebar">
             <span><a href="index.html" target="_blank" id="play">▶️ Play game in new window</a></span>
             <textarea id="output"></textarea>
             <div>
@@ -146,6 +165,21 @@
                     <input type="number" title="width" name="chosen-width" size="4" min="5" value="20">
                     &times;
                     <input type="number" title="height" name="chosen-height" size="4" min="5" value="20">
+                </div>
+            </div>
+            <button id="solve">Solve</button>
+            <div>
+                <div>Thresholds</div>
+                <div>
+                    <input type="number" name="threshold1" value="10" style="width: 4em" />
+                    <input type="number" name="threshold2" value="11" style="width: 4em" />
+                    <input type="number" name="threshold3" value="12" style="width: 4em" />
+                </div>
+            </div>
+            <div>
+                <div>Points to earn</div>
+                <div>
+                    <input type="number" name="basePoints" value="10" style="width: 4em" />
                 </div>
             </div>
             <button id="copy-to-clipboard">Copy JSON data to clipboard</button>

@@ -25,15 +25,6 @@
     const STORAGE_KEY_LEVEL = 'rutschpartie.level';
     const STORAGE_KEY_WIDTH = 'rutschpartie.width';
     const STORAGE_KEY_HEIGHT = 'rutschpartie.height';
-    const TILE_SIZE = 32;
-    const ICE = ' ';
-    const ROCK = '#';
-    const EXIT = 'X';
-    const COIN = '$';
-    const GOLD = 'G';
-    const PLAYER = 'P';
-    const HOLE = 'O';
-    const BREADCRUMB = '.';
     const el = {};
     let selectedItem = 'rock';
     let shiftPressed = false;
@@ -41,6 +32,37 @@
     let level = null;
     let width;
     let height;
+    function solve() {
+        const solver = new ChillySolver([...level]);
+        let [node, iterations] = solver.solve();
+        if (node === null) {
+            document.querySelector('#path').textContent = '<no solution>';
+            return;
+        }
+        let path = [node];
+        while (node.hasParent()) {
+            node = node.parent;
+            path.unshift(node);
+        }
+        el.game.querySelectorAll('.hint').forEach(el => el.remove());
+        const moves = [];
+        const HINT_NAMES = { 'U': 'hint-up', 'R': 'hint-right', 'D': 'hint-down', 'L': 'hint-left' };
+        let { x, y } = path[0];
+        for (let i = 1; i < path.length; ++i) {
+            let node = path[i];
+            moves.push(node.move);
+            const hint = document.createElement('div');
+            hint.className = `tile hint ${HINT_NAMES[node.move]}`;
+            el.game.querySelector(`[data-coord="${x}-${y}"]`).appendChild(hint);
+            x = node.x;
+            y = node.y;
+        }
+        document.querySelector('#path').textContent = `${moves.length}: ${moves.join(' ')} (${iterations} iterations)`;
+        el.points.value = Math.round(iterations / 10);
+        el.threshold1.value = moves.length;
+        el.threshold2.value = moves.length+1;
+        el.threshold3.value = Math.round(moves.length*1.4);
+    }
     function undo() {
         undoHistory.undo();
     }
@@ -49,7 +71,7 @@
         localStorage.setItem(STORAGE_KEY_LEVEL, JSON.stringify(level));
     }
     function updatePlayButton() {
-        let playableLevel = level.map(row => row.replaceAll(BREADCRUMB, ICE));
+        let playableLevel = level.map(row => row.replaceAll(Tile.Marker, Tile.Ice));
         el.playButton.href = `index.html#level=${btoa(JSON.stringify(playableLevel))}`;
         el.output.value = level.join('\n');
     }
@@ -59,28 +81,31 @@
         let row = '';
         for (const tile of el.scene.children) {
             if (tile.classList.contains('rock')) {
-                row += ROCK;
+                row += Tile.Rock;
+            }
+            else if (tile.classList.contains('empty')) {
+                row += Tile.Empty;
             }
             else if (tile.classList.contains('penguin')) {
-                row += PLAYER;
+                row += Tile.Player;
             }
             else if (tile.classList.contains('coin')) {
-                row += COIN;
+                row += Tile.Coin;
             }
             else if (tile.classList.contains('gold')) {
-                row += GOLD;
+                row += Tile.Gold;
             }
             else if (tile.classList.contains('exit')) {
-                row += EXIT;
+                row += Tile.Exit;
             }
             else if (tile.classList.contains('hole')) {
-                row += HOLE;
+                row += Tile.Hole;
             }
             else if (tile.classList.contains('marker')) {
-                row += BREADCRUMB;
+                row += Tile.Marker;
             }
             else {
-                row += ICE;
+                row += Tile.Ice;
             }
             if (++x === width) {
                 rows.push(row);
@@ -91,7 +116,7 @@
         saveLevel(rows);
     }
     function generateTiles() {
-        const tiles = [];
+        let tiles = [];
         for (let y = 0; y < level.length; ++y) {
             const row = level[y];
             for (let x = 0; x < row.length; ++x) {
@@ -100,26 +125,30 @@
                 tile.className = 'tile';
                 tile.addEventListener('click', onTileClicked);
                 tile.addEventListener('mouseenter', onTileEntered);
+                tile.setAttribute('data-coord', `${x}-${y}`);
                 switch (item) {
-                    case ROCK:
+                    case Tile.Rock:
                         tile.classList.add('rock');
                         break;
-                    case HOLE:
+                    case Tile.Empty:
+                        tile.classList.add('empty');
+                        break;
+                    case Tile.Hole:
                         tile.classList.add('hole');
                         break;
-                    case COIN:
+                    case Tile.Coin:
                         tile.classList.add('coin');
                         break;
-                    case EXIT:
+                    case Tile.Exit:
                         tile.classList.add('exit');
                         break;
-                    case PLAYER:
+                    case Tile.Player:
                         tile.classList.add('penguin');
                         break;
-                    case BREADCRUMB:
+                    case Tile.Marker:
                         tile.classList.add('marker');
                         break;
-                    case ICE:
+                    case Tile.Ice:
                     // fall-through
                     default:
                         tile.classList.add('ice');
@@ -135,8 +164,8 @@
         height = level.length;
         el.output.cols = width;
         el.output.rows = height;
-        el.scene.style.gridTemplateColumns = `repeat(${width}, ${TILE_SIZE}px)`;
-        el.scene.style.gridTemplateRows = `repeat(${height}, ${TILE_SIZE}px)`;
+        el.scene.style.gridTemplateColumns = `repeat(${width}, ${Tile.Size}px)`;
+        el.scene.style.gridTemplateRows = `repeat(${height}, ${Tile.Size}px)`;
         el.scene.replaceChildren(...generateTiles());
         el.game.replaceChildren(el.scene);
     }
@@ -203,6 +232,7 @@
     function onKeyDown(e) {
         if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
             undo();
+            solve();
             return;
         }
         shiftPressed = e.key === 'Shift';
@@ -230,6 +260,7 @@
             updatePlayButton();
         }
         removeHash();
+        solve();
     }
     function onTileEntered(e) {
         if (e.buttons === 1) {
@@ -271,16 +302,23 @@
         build();
         evaluateTiles();
         updatePlayButton();
+        solve();
     }
     function generateEmptyLevel(w, h) {
         return []
-            .concat([ROCK.repeat(w)])
-            .concat(Array(h - 2).fill(ROCK + ICE.repeat(w - 2) + ROCK))
-            .concat([ROCK.repeat(w)]);
+            .concat([Tile.Rock.repeat(w)])
+            .concat(Array(h - 2).fill(Tile.Rock + Tile.Ice.repeat(w - 2) + Tile.Rock))
+            .concat([Tile.Rock.repeat(w)]);
     }
     function main() {
         el.game = document.querySelector('#game');
         el.playButton = document.querySelector('#play');
+        el.solveButton = document.querySelector('#solve');
+        el.solveButton.addEventListener('click', solve);
+        el.threshold1 = document.querySelector('[name="threshold1"]');
+        el.threshold2 = document.querySelector('[name="threshold2"]');
+        el.threshold3 = document.querySelector('[name="threshold3"]');
+        el.points = document.querySelector('[name="basePoints"]');
         el.output = document.querySelector('#output');
         el.output.addEventListener('paste', onPasted);
         el.output.addEventListener('focus', e => e.target.select());
@@ -318,7 +356,17 @@
             });
         document.querySelector('#copy-to-clipboard').addEventListener('click',
             () => {
-                navigator.clipboard.writeText(JSON.stringify(level, null, 2)).then(
+                const levelData = {
+                    thresholds: [
+                        parseInt(el.threshold1.value),
+                        parseInt(el.threshold2.value),
+                        parseInt(el.threshold3.value),
+                    ],
+                    basePoints: parseInt(el.points.value),
+                    name: '<no name>',
+                    data: level,
+                };
+                navigator.clipboard.writeText(JSON.stringify(levelData, null, 2)).then(
                     () => { },
                     () => {
                         alert('Copy failed.');

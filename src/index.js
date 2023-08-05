@@ -1,7 +1,6 @@
 (function (window) {
     "use strict";
 
-
     class State {
         static PreInit = -1;
         static SplashScreen = 0;
@@ -11,20 +10,38 @@
         static SettingsScreen = 4;
     };
 
-    class Tile {
-        static Size = 32;
-        static Ice = ' ';
-        static Marker = '.';
-        static Rock = '#';
-        static Exit = 'X';
-        static Player = 'P';
-        static Coin = '$';
-        static Gold = 'G';
-        static Hole = 'O';
-    };
+    function help() {
+        const solver = new ChillySolver([...level.origData]);
+
+        let [node, _iterations] = solver.solve();
+        if (node === null) {
+            document.querySelector('#path').textContent = '<no solution>';
+            return;
+        }
+        let path = [node];
+        while (node.hasParent()) {
+            node = node.parent;
+            path.unshift(node);
+        }
+        const moves = [];
+        const HINT_NAMES = { 'U': 'hint-up', 'R': 'hint-right', 'D': 'hint-down', 'L': 'hint-left' };
+        let { x, y } = path[0];
+        for (let i = 1; i < path.length; ++i) {
+            let node = path[i];
+            moves.push(node.move);
+            const hint = document.createElement('div');
+            hint.className = `tile hint ${HINT_NAMES[node.move]}`;
+            tiles[y][x].appendChild(hint);
+            x = node.x;
+            y = node.y;
+        }
+        document.querySelector('#path').textContent = `${moves.length}: ${moves.join(' ')}`;
+    }
+
 
     class STORAGE_KEY {
         static LevelNum = 'glissade.level';
+        static MaxLevelNum = 'glissade.max-level';
     };
 
     const POINTS = {
@@ -47,6 +64,7 @@
         distance: 0,
     };
     let level = {
+        origData: [],
         data: [],
         score: 0,
         currentIdx: (function () {
@@ -61,6 +79,7 @@
         })(),
     };
     let state = State.PreInit;
+    let prevState;
     let width = 0;
     let height = 0;
     let t0, t1, animationDuration;
@@ -72,6 +91,7 @@
     let holeEntered = false;
     let easing = null;
     let sounds = {};
+
     function placePlayerAt(x, y) {
         player.x = x;
         player.y = y;
@@ -200,11 +220,16 @@
             return;
         }
         if (e.type === 'keydown' && e.key === 'Escape') {
-
+            if (state === State.SettingsScreen) {
+                removeOverlay();
+                restoreState();
+            }
+            else if (state != State.SplashScreen) {
+                showSettingsScreen();
+            }
             e.preventDefault();
             return;
         }
-        let hasMoved = false;
         switch (state) {
             case State.LevelEnd:
                 if (e.type === 'keypress') {
@@ -217,6 +242,9 @@
                     e.preventDefault();
                 }
                 break;
+            case State.SettingsScreen:
+
+                break;
             case State.SplashScreen:
                 if (e.type === 'keypress' && e.key === ' ') {
                     e.preventDefault();
@@ -227,6 +255,7 @@
                 if (isMoving)
                     return;
                 let move;
+                let hasMoved = false;
                 switch (e.key) {
                     case 'w':
                     // fall-through
@@ -259,11 +288,6 @@
                 break;
             default:
                 break;
-        }
-    }
-    function onResetButtonPressed(_e) {
-        if (confirm('Do really want to restart this level?')) {
-            resetLevel();
         }
     }
     function onClick(e) {
@@ -300,9 +324,13 @@
                 const item = row[x];
                 const tile = document.createElement('span');
                 tile.className = 'tile';
+                // tile.setAttribute('data-coords', `${x}-${y}`);
                 switch (item) {
                     case Tile.Rock:
                         tile.classList.add('rock');
+                        break;
+                    case Tile.Empty:
+                        tile.classList.add('empty');
                         break;
                     case Tile.Coin:
                         tile.classList.add('coin');
@@ -353,7 +381,8 @@
     function onExitReached() {
         sounds.exit.play();
         standUpright();
-        state = State.LevelEnd;
+        setState(State.LevelEnd);
+        console.debug(level.currentIdx, LEVELS.length, level.currentIdx < LEVELS.length)
         if (level.currentIdx < LEVELS.length) {
             const congrats = el.congratsTemplate.content.cloneNode(true);
             congrats.querySelector('div.pulsating > span').textContent = level.currentIdx + 1 + 1;
@@ -394,6 +423,7 @@
     }
     function setLevel(levelData) {
         level.data = [...levelData];
+        level.origData = [...levelData];
         width = level.data[0].length;
         height = level.data.length;
         el.levelNum.textContent = `Level ${level.currentIdx + 1}`;
@@ -402,7 +432,16 @@
         updateMoveCounter();
         el.scene = generateScene();
         el.game.replaceChildren(el.scene, player.el);
+        el.extras.style.width = `${el.gameContainer.clientWidth}px`;
         replacePlayerWithIceTile();
+    }
+    function restoreState() {
+        state = prevState;
+    }
+    function setState(newState) {
+        console.debug(`setState(${state}) ${prevState} -> ${state}`);
+        prevState = state;
+        state = newState;
     }
     function showOverlay() {
         el.overlay.classList.remove('hidden');
@@ -415,7 +454,7 @@
     }
     function play() {
         el.overlayBox.removeEventListener('click', play);
-        state = State.Playing;
+        setState(State.Playing);
         removeOverlay();
         checkAudio();
     }
@@ -425,8 +464,21 @@
         resetLevel();
         play();
     }
+    function maxLevelNum() {
+        let maxLvl = parseInt(localStorage.getItem(STORAGE_KEY.MaxLevelNum));
+        if (isNaN(maxLvl)) {
+            maxLvl = 0;
+        }
+        return Math.max(level.currentIdx, Math.min(LEVELS.length, maxLvl));
+    }
     function getLevelScore() {
         return (getNumStars() + 1) * (level.score + LEVELS[level.currentIdx].basePoints);
+    }
+    function gotoLevel(idx) {
+        level.currentIdx = idx;
+        localStorage.setItem(STORAGE_KEY.LevelNum, level.currentIdx);
+        resetLevel();
+        play();
     }
     function gotoNextLevel() {
         el.proceed.removeEventListener('click', gotoNextLevel);
@@ -434,14 +486,35 @@
         el.totalScore.textContent = player.score;
         ++level.currentIdx;
         localStorage.setItem(STORAGE_KEY.LevelNum, level.currentIdx);
+        localStorage.setItem(STORAGE_KEY.MaxLevelNum, maxLevelNum());
         resetLevel();
         play();
     }
     function showSplashScreen() {
-        state = State.SplashScreen;
+        setState(State.SplashScreen);
         const splash = el.splashTemplate.content.cloneNode(true);
         el.overlayBox.replaceChildren(splash);
         el.overlayBox.addEventListener('click', play, { capture: true, once: true });
+        showOverlay();
+    }
+    function showSettingsScreen() {
+        setState(State.SettingsScreen);
+        const settings = el.settingsTemplate.content.cloneNode(true);
+        const lvlList = settings.querySelector('.level-list');
+        const padding = 1 + Math.floor(Math.log10(LEVELS.length));
+        for (let i = 0; i < maxLevelNum(); ++i) {
+            const div = document.createElement('div');
+            const lvlName = LEVELS[i].name
+                ? LEVELS[i].name
+                : '<?>';
+            div.textContent = `Level ${(i + 1).toString().padStart(padding, ' ')}: ${lvlName}`;
+            div.addEventListener('click', () => {
+                removeOverlay();
+                gotoLevel(i);
+            });
+            lvlList.appendChild(div);
+        }
+        el.overlayBox.replaceChildren(settings);
         showOverlay();
     }
     function resetLevel() {
@@ -450,6 +523,7 @@
         el.levelScore.textContent = '0';
         el.totalScore.textContent = player.score;
         let levelData = LEVELS[level.currentIdx].data;
+        el.path.textContent = '';
         if (window.location.hash) {
             const hash = window.location.hash.substring(1);
             const params = hash.split(';');
@@ -499,44 +573,49 @@
     function main() {
         el.game = document.querySelector('#game');
         el.game.addEventListener('click', onClick);
+        el.gameContainer = document.querySelector('#game-container');
         el.totalScore = document.querySelector('#total-score');
         el.levelScore = document.querySelector('#level-score');
         el.levelNum = document.querySelector('#level-num');
-        // el.distance = document.querySelector('#distance');
         el.moveCount = document.querySelector('#move-count');
+        el.extras = document.querySelector('#extras');
+        el.path = document.querySelector('#path');
         el.overlay = document.querySelector('#overlay');
         el.overlayBox = document.querySelector('#overlay-box');
-        el.restart = document.querySelector('#restart');
-        el.restart.addEventListener('click', onResetButtonPressed);
+        el.chooseLevel = document.querySelector('#choose-level');
+        el.chooseLevel.addEventListener('click', showSettingsScreen);
         el.loudspeaker = document.querySelector('#loudspeaker');
         el.loudspeaker.addEventListener('click', checkAudio);
+        el.helpButton = document.querySelector('#help');
+        el.helpButton.addEventListener('click', help);
         el.splashTemplate = document.querySelector("#splash");
         el.congratsTemplate = document.querySelector("#congrats");
+        el.settingsTemplate = document.querySelector("#settings");
         player.el = document.createElement('span');
         player.el.className = 'tile penguin';
-        window.addEventListener('keydown', onKeyPressed);
-        window.addEventListener('keypress', onKeyPressed);
-        document.querySelector('.control.arrow-up').addEventListener('click', () => {
-            window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'w' }));
-        });
-        document.querySelector('.control.arrow-down').addEventListener('click', () => {
-            window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 's' }));
-        });
-        document.querySelector('.control.arrow-right').addEventListener('click', () => {
-            window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'd' }));
-        });
-        document.querySelector('.control.arrow-left').addEventListener('click', () => {
-            window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'a' }));
-        });
-        fetch('levels.json').then(response => response.json()).then(json => {
-            LEVELS = json;
-            restartGame();
-        }).catch(e => console.error(e));
         setupAudio();
-        showSplashScreen();
-        // if (navigator.userAgent.includes('Mobile')) {
-        //     document.querySelector('#controls').classList.remove('hidden');
-        // }
+        fetch('static/levels.json')
+            .then(response => response.json())
+            .then(json => {
+                LEVELS = json;
+                window.addEventListener('keydown', onKeyPressed);
+                window.addEventListener('keypress', onKeyPressed);
+                document.querySelector('.control.arrow-up').addEventListener('click', () => {
+                    window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'w' }));
+                });
+                document.querySelector('.control.arrow-down').addEventListener('click', () => {
+                    window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 's' }));
+                });
+                document.querySelector('.control.arrow-right').addEventListener('click', () => {
+                    window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'd' }));
+                });
+                document.querySelector('.control.arrow-left').addEventListener('click', () => {
+                    window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'a' }));
+                });
+                restartGame();
+                showSplashScreen();
+            })
+            .catch(e => console.error(e));
         document.querySelector('#controls').classList.remove('hidden');
     }
     window.addEventListener('load', main);
