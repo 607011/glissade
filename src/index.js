@@ -105,7 +105,7 @@
     }
     function teleport() {
         sounds.teleport.play();
-        const otherHole = holes.filter(v => v.x !== player.x && v.y !== player.y)[0];
+        const otherHole = holes.filter(v => v.x !== player.x || v.y !== player.y)[0];
         placePlayerAt(otherHole.x, otherHole.y);
         standUpright();
     }

@@ -143,7 +143,7 @@ class ChillySolver {
                         yield { move: d.move, node: new Node(stopTile, x + d.x, y + d.y) };
                         break;
                     case Tile.Hole:
-                        const otherHole = this.#holes.filter(v => v.x !== (x + d.x) && v.y !== (y + d.y))[0];
+                        const otherHole = this.#holes.filter(v => v.x !== (x + d.x) || v.y !== (y + d.y))[0];
                         yield { move: d.move, node: getCachedNeighbor(Tile.Hole, otherHole.x, otherHole.y) };
                         break;
                     default:
