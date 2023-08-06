@@ -244,6 +244,7 @@
         }
     }
     function onTileClicked(e) {
+        el.game.querySelectorAll('.hint').forEach(el => el.remove());
         const beforeClassName = e.target.className;
         if (shiftPressed) {
             e.target.className = `tile ice`;
