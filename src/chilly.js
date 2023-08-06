@@ -86,10 +86,6 @@ class ChillySolver {
      * @param {Array} levelData
      */
     constructor(levelData) {
-        console.assert(levelData instanceof Array);
-        console.assert(levelData.length > 0);
-        console.assert(levelData[0] instanceof String || levelData[0] instanceof Array);
-        console.assert(levelData[0].length > 0);
         this.#levelData = levelData;
         this.#holes = [];
         this.#rootNode = null;
