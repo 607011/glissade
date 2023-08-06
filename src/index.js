@@ -98,6 +98,9 @@
         player.el.style.left = `${Tile.Size * x}px`;
         player.el.style.top = `${Tile.Size * y}px`;
     }
+    function scrollIntoView() {
+        player.el.scrollIntoView(); // XXX: not optimal, improve by trying to keep penguin in center of visible screen
+    }
     function standUpright() {
         for (const c of ['penguin-left', 'penguin-right', 'penguin-up', 'penguin-down']) {
             player.el.classList.remove(c);
@@ -107,6 +110,7 @@
         sounds.teleport.play();
         const otherHole = holes.filter(v => v.x !== player.x || v.y !== player.y)[0];
         placePlayerAt(otherHole.x, otherHole.y);
+        scrollIntoView();
         standUpright();
     }
     function rockHit() {
@@ -133,6 +137,7 @@
         }
         player.el.style.left = `${Tile.Size * (player.x + dx)}px`;
         player.el.style.top = `${Tile.Size * (player.y + dy)}px`;
+        scrollIntoView();
         if (performance.now() > t1) {
             placePlayerAt(player.dest.x, player.dest.y);
             updateMoveCounter();
