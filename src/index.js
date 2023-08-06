@@ -98,9 +98,6 @@
         player.el.style.left = `${Tile.Size * x}px`;
         player.el.style.top = `${Tile.Size * y}px`;
     }
-    function scrollIntoView() {
-        player.el.scrollIntoView(); // XXX: not optimal, improve by trying to keep penguin in center of visible screen
-    }
     function standUpright() {
         for (const c of ['penguin-left', 'penguin-right', 'penguin-up', 'penguin-down']) {
             player.el.classList.remove(c);
@@ -328,7 +325,6 @@
                 const item = row[x];
                 const tile = document.createElement('span');
                 tile.className = 'tile';
-                // tile.setAttribute('data-coords', `${x}-${y}`);
                 switch (item) {
                     case Tile.Rock:
                         tile.classList.add('rock');
