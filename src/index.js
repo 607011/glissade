@@ -116,7 +116,6 @@
     function updateMoveCounter() {
         el.moveCount.title = player.moves.join('');
         el.moveCount.textContent = player.moves.length;
-        // el.distance.textContent = player.distance;
     }
     function animate() {
         const dt = performance.now() - t0;
