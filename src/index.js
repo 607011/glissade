@@ -403,7 +403,7 @@
                     case 1:
                         return 'Well done, but there&rsquo;s room for improvement.';
                     case 2:
-                        return 'Good job!';
+                        return 'Good job! But you could do a little bit better.';
                     case 3:
                         return 'Excellent! You scored perfectly.';
                     default:
