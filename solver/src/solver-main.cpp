@@ -29,11 +29,10 @@ int main(int argc, char *argv[])
     levels.at(level_idx).dump();
 
     std::cout << '\n'
-              << "Breadth-First Search running ... " << std::endl;
+              << "Breadth-First Search running ... ";
     chilly::solver solver(level_data);
     chilly::solver::result result = solver.shortestPath();
     std::cout << '\n';
-
     if (result.exit == nullptr)
     {
         std::cout << "BFS: no solution found.\n";
@@ -49,7 +48,7 @@ int main(int argc, char *argv[])
             current_node = current_node->parent();
             path.insert(std::begin(path), current_node);
         }
-        std::cout << "Shortest path has " << (path.size() - 1) << " moves: ";
+        std::cout << "Shortest path disregarding collectibles has " << (path.size() - 1) << " moves: ";
         for (auto cell : path)
         {
             std::cout << cell.move();
@@ -70,10 +69,13 @@ int main(int argc, char *argv[])
     {
         std::sort(std::begin(routes), std::end(routes), [](chilly::path const &a, chilly::path const &b) -> bool
                   { return a.size() < b.size(); });
+        auto last_valid = std::unique(std::begin(routes), std::end(routes), [](chilly::path const &a, chilly::path const &b) -> bool
+                                      { return a.size() == b.size(); });
+        routes.erase(last_valid, std::end(routes));
 
         for (std::size_t i = 0; i < std::min(10UL, routes.size()); ++i)
         {
-            auto path = routes.at(i);
+            auto const &path = routes.at(i);
             std::cout << (path.size() - 1) << ": ";
             for (int j = 1; j < path.size(); ++j)
             {
@@ -82,8 +84,7 @@ int main(int argc, char *argv[])
             std::cout << '\n';
         }
 
-        auto shortest_path = routes.front();
-
+        auto const &shortest_path = routes.front();
         std::cout << "\nShortest path has " << (shortest_path.size() - 1) << " moves: ";
         for (auto hop = shortest_path.begin() + 1; hop != shortest_path.end(); ++hop)
         {

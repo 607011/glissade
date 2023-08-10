@@ -432,7 +432,8 @@ namespace chilly
             for (auto [direction, neighbor] : neighbors_of(current_node))
             {
                 ++iterations;
-                // TODO: disallow move in direction opposite to last direction unless a coin was collected with the last move
+                // TODO???: disallow move in direction opposite to last direction
+                //          unless a coin was collected with the last move
                 if (!neighbor.node->is_explored())
                 {
                     neighbor.node->set_explored(true);
@@ -442,35 +443,6 @@ namespace chilly
                     route.pop_back();
                 }
             }
-
-            // for (auto [coord, value] : _collectibles)
-            // {
-            //     std::cout << "Collectible found at " << coord.x << ',' << coord.y << ": " << value << '\n';
-            // }
-
-            // std::cout << "Route:\n";
-            // for (auto const &hop : route)
-            // {
-            //     std::cout << "  Move " << hop.move << " " << hop.node->x() << ',' << hop.node->y() << "\n";
-            //     for (auto [move, neighbor] : hop.node->neighbors())
-            //     {
-            //         std::cout << "    - " << move << ' ' << neighbor.node->x() << ',' << neighbor.node->y() << ' ' << neighbor.collected.size() << '\n';
-            //     }
-            // }
-
-            // for (auto const &hop : route)
-            // {
-            //     std::cout << "  Move " << hop.move << " from " << hop.node->x() << ',' << hop.node->y() << ": ";
-            //     if (hop.move == chilly::Up || hop.move == chilly::Down || hop.move == chilly::Left || hop.move == chilly::Right)
-            //     {
-            //         auto const &neighbor = hop.node->neighbors().at(hop.move);
-            //         std::cout << " to " << neighbor.node->x() << ',' << neighbor.node->y() << ' ' << neighbor.collected.value << "\n";
-            //     }
-            //     else
-            //     {
-            //         std::cout << '\n';
-            //     }
-            // }
         };
 
         DFS(_root);
