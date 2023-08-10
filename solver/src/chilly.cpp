@@ -4,6 +4,36 @@
 
 namespace chilly
 {
+    level tag_invoke(boost::json::value_to_tag<level>, boost::json::value const &v)
+    {
+        auto &o = v.as_object();
+        std::vector<std::vector<tile_t>> lvl_data;
+        for (auto const &value : o.at("data").as_array())
+        {
+            auto row_str = boost::json::value_to<std::string>(value);
+            std::vector<tile_t> row;
+            for (char c : row_str)
+            {
+                row.push_back(static_cast<tile_t>(c));
+            }
+            lvl_data.push_back(row);
+        }
+        std::vector<int> thres_data;
+        for (auto const &value : o.at("thresholds").as_array())
+        {
+            thres_data.push_back(static_cast<int>(value.as_int64()));
+        }
+        std::string name = o.contains("name")
+                               ? boost::json::value_to<std::string>(o.at("name"))
+                               : "<no name>";
+        return {
+            name,
+            static_cast<int>(o.at("basePoints").as_int64()),
+            lvl_data,
+            thres_data,
+        };
+    }
+
     std::ostream &operator<<(std::ostream &os, direction_t d)
     {
         switch (d)
@@ -34,7 +64,7 @@ namespace chilly
         /* ... */
     }
     node::node(std::shared_ptr<node> other)
-        : _id(other->_id), _x(other->_x), _y(other->_y), _explored(other->_explored), _parent(other->_parent), _neighbors(other->_neighbors), _move(other->_move), _collectible(other->_collectible)
+        : _id(other->_id), _x(other->_x), _y(other->_y), _explored(other->_explored), _parent(other->_parent), _neighbors(other->_neighbors), _move(other->_move)
     {
         /* ... */
     }
@@ -150,7 +180,13 @@ namespace chilly
         }
     }
 
-    const std::vector<direction> solver::Directions;
+    const std::vector<direction> solver::Directions =
+        {{
+            {-1, 0, Left},
+            {+1, 0, Right},
+            {0, -1, Up},
+            {0, +1, Down},
+        }};
 
     direction_t solver::opposite(direction_t d)
     {
@@ -195,15 +231,8 @@ namespace chilly
                     break;
                 }
             }
-            // std::cout << '\n';
         }
     }
-
-    struct result
-    {
-        std::size_t iterations{0};
-        std::shared_ptr<node> exit;
-    };
 
     solver::solver(std::vector<std::vector<tile_t>> const &level_data)
         : _level_data(level_data)
@@ -256,7 +285,7 @@ namespace chilly
         }
     }
 
-    std::unordered_map<direction_t, neighbor_t> const &solver::neighbors(std::shared_ptr<node> origin)
+    std::unordered_map<direction_t, neighbor_t> const &solver::neighbors_of(std::shared_ptr<node> origin)
     {
         if (!origin->neighbors().empty())
             return origin->neighbors();
@@ -268,7 +297,7 @@ namespace chilly
             int x_step = 0;
             int y_step = 0;
             static const std::vector<tile_t> Glidable = {Ice, Coin, Marker, Empty};
-            collectible_t c;
+            std::vector<collectible_t> collected;
             while (std::find(std::begin(Glidable), std::end(Glidable), cell(x + d.x, y + d.y)) != std::end(Glidable))
             {
                 x += d.x;
@@ -276,14 +305,10 @@ namespace chilly
                 switch (cell(x, y))
                 {
                 case Coin:
-                    c.value = node::CoinValue;
-                    c.x = x;
-                    c.y = y;
+                    collected.emplace_back(collectible_t{x, y, node::CoinValue});
                     break;
                 case Gold:
-                    c.value = node::GoldValue;
-                    c.x = x;
-                    c.y = y;
+                    collected.emplace_back(collectible_t{x, y, node::GoldValue});
                     break;
                 default:
                     break;
@@ -303,7 +328,7 @@ namespace chilly
                 {
                     _nodes[key] = std::make_shared<node>(Exit, norm_x(x + d.x), norm_y(y + d.y), false);
                 }
-                origin->add_neighbor(d.move, neighbor_t{_nodes[key], c});
+                origin->add_neighbor(d.move, neighbor_t{_nodes[key], collected});
                 break;
             }
             case Hole:
@@ -315,17 +340,20 @@ namespace chilly
                 {
                     _nodes[key] = std::make_shared<node>(Hole, other_hole->x, other_hole->y, false);
                 }
-                origin->add_neighbor(d.move, neighbor_t{_nodes[key], c});
+                origin->add_neighbor(d.move, neighbor_t{_nodes[key], collected});
                 break;
             }
             default:
             {
-                auto const &key = coord{norm_x(x), norm_y(y)};
-                if (_nodes.find(key) == std::end(_nodes))
+                if (norm_x(x) != origin->x() || norm_y(y) != origin->y())
                 {
-                    _nodes[key] = std::make_shared<node>(stop_tile, norm_x(x), norm_y(y), false);
+                    auto const &key = coord{norm_x(x), norm_y(y)};
+                    if (_nodes.find(key) == std::end(_nodes))
+                    {
+                        _nodes[key] = std::make_shared<node>(stop_tile, norm_x(x), norm_y(y), false);
+                    }
+                    origin->add_neighbor(d.move, neighbor_t{_nodes[key], collected});
                 }
-                origin->add_neighbor(d.move, neighbor_t{_nodes[key], c});
                 break;
             }
             }
@@ -340,26 +368,26 @@ namespace chilly
             return result{};
         unexplore_all_nodes();
         std::queue<neighbor_t> q;
-        q.push(neighbor_t{_root, collectible_t{}});
+        q.push(neighbor_t{_root, {}});
         std::size_t iterations = 0;
         while (!q.empty())
         {
-            std::shared_ptr<node> current_node = q.front().nod;
+            std::shared_ptr<node> current_node = q.front().node;
             q.pop();
-            for (auto [move, neighbor] : neighbors(current_node))
+            for (auto [move, neighbor] : neighbors_of(current_node))
             {
                 ++iterations;
-                if (neighbor.nod->is_exit())
+                if (neighbor.node->is_exit())
                 {
-                    neighbor.nod->set_parent(current_node);
-                    neighbor.nod->set_move(move);
-                    return result{iterations, neighbor.nod};
+                    neighbor.node->set_parent(current_node);
+                    neighbor.node->set_move(move);
+                    return result{iterations, neighbor.node};
                 }
-                if (!neighbor.nod->is_explored())
+                if (!neighbor.node->is_explored())
                 {
-                    neighbor.nod->set_parent(current_node);
-                    neighbor.nod->set_move(move);
-                    neighbor.nod->set_explored(true);
+                    neighbor.node->set_parent(current_node);
+                    neighbor.node->set_move(move);
+                    neighbor.node->set_explored(true);
                     q.push(neighbor);
                 }
             }
@@ -373,7 +401,7 @@ namespace chilly
             return std::vector<path>{};
         unexplore_all_nodes();
         std::vector<path> solutions;
-        path route{result_node{_root->x(), _root->y(), NoDirection}};
+        path route{result_node{_root, NoDirection}};
 
         std::size_t iterations = 0;
         std::function<void(std::shared_ptr<node>)> DFS;
@@ -382,29 +410,71 @@ namespace chilly
         {
             if (current_node->is_exit())
             {
-                // TODO: only add route to solutions if all collectibles are collected along the route
-                solutions.push_back(route);
-                std::cout << "\rSolutions found: " << solutions.size() << std::flush;
+                std::unordered_map<coord, int, coord> collected;
+                result_node last_hop = route.at(0);
+                for (int i = 1; i < route.size(); ++i)
+                {
+                    auto const &hop = route.at(i);
+                    auto const &neighbor = last_hop.node->neighbors().at(hop.move);
+                    for (auto c : neighbor.collected)
+                    {
+                        collected[coord{c.x, c.y}] = c.value;
+                    }
+                    last_hop = hop;
+                }
+                if (collected.size() == _collectibles.size())
+                {
+                    solutions.push_back(route);
+                    std::cout << "\rSolutions found: " << solutions.size() << std::flush;
+                }
                 return;
             }
-            for (auto [direction, neighbor] : neighbors(current_node))
+            for (auto [direction, neighbor] : neighbors_of(current_node))
             {
                 ++iterations;
                 // TODO: disallow move in direction opposite to last direction unless a coin was collected with the last move
-                if (!neighbor.nod->is_explored())
+                if (!neighbor.node->is_explored())
                 {
-                    neighbor.nod->set_explored(true);
-                    route.emplace_back(result_node{neighbor.nod->x(), neighbor.nod->y(), direction});
-                    DFS(neighbor.nod);
-                    neighbor.nod->set_explored(false);
+                    neighbor.node->set_explored(true);
+                    route.emplace_back(result_node{neighbor.node, direction});
+                    DFS(neighbor.node);
+                    neighbor.node->set_explored(false);
                     route.pop_back();
                 }
             }
+
+            // for (auto [coord, value] : _collectibles)
+            // {
+            //     std::cout << "Collectible found at " << coord.x << ',' << coord.y << ": " << value << '\n';
+            // }
+
+            // std::cout << "Route:\n";
+            // for (auto const &hop : route)
+            // {
+            //     std::cout << "  Move " << hop.move << " " << hop.node->x() << ',' << hop.node->y() << "\n";
+            //     for (auto [move, neighbor] : hop.node->neighbors())
+            //     {
+            //         std::cout << "    - " << move << ' ' << neighbor.node->x() << ',' << neighbor.node->y() << ' ' << neighbor.collected.size() << '\n';
+            //     }
+            // }
+
+            // for (auto const &hop : route)
+            // {
+            //     std::cout << "  Move " << hop.move << " from " << hop.node->x() << ',' << hop.node->y() << ": ";
+            //     if (hop.move == chilly::Up || hop.move == chilly::Down || hop.move == chilly::Left || hop.move == chilly::Right)
+            //     {
+            //         auto const &neighbor = hop.node->neighbors().at(hop.move);
+            //         std::cout << " to " << neighbor.node->x() << ',' << neighbor.node->y() << ' ' << neighbor.collected.value << "\n";
+            //     }
+            //     else
+            //     {
+            //         std::cout << '\n';
+            //     }
+            // }
         };
 
         DFS(_root);
 
         return solutions;
     }
-
 };

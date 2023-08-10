@@ -35,15 +35,6 @@ namespace chilly
 
     std::ostream &operator<<(std::ostream &, direction_t);
 
-    struct result_node
-    {
-        int x;
-        int y;
-        direction_t move;
-    };
-
-    using path = std::vector<result_node>;
-
     struct collectible_t
     {
         int x;
@@ -55,9 +46,17 @@ namespace chilly
 
     struct neighbor_t
     {
-        std::shared_ptr<node> nod;
-        collectible_t collected;
+        std::shared_ptr<node> node;
+        std::vector<collectible_t> collected;
     };
+
+    struct result_node
+    {
+        std::shared_ptr<node> node;
+        direction_t move;
+    };
+
+    using path = std::vector<result_node>;
 
     struct direction
     {
@@ -75,7 +74,6 @@ namespace chilly
         std::shared_ptr<node> _parent;
         std::unordered_map<direction_t, neighbor_t> _neighbors;
         direction_t _move;
-        collectible_t _collectible;
 
     public:
         static const int CoinValue = 5;
@@ -111,37 +109,7 @@ namespace chilly
 
         void dump() const;
 
-        friend level tag_invoke(boost::json::value_to_tag<level>, boost::json::value const &v)
-        {
-            auto &o = v.as_object();
-            std::vector<std::vector<tile_t>> lvl_data;
-            for (auto const &value : o.at("data").as_array())
-            {
-                auto row_str = boost::json::value_to<std::string>(value);
-                std::vector<tile_t> row;
-                for (char c : row_str)
-                {
-                    row.push_back(static_cast<tile_t>(c));
-                }
-                lvl_data.push_back(row);
-            }
-            std::vector<int> thres_data;
-            for (auto const &value : o.at("thresholds").as_array())
-            {
-                thres_data.push_back(static_cast<int>(value.as_int64()));
-            }
-            std::string name = o.contains("name")
-                                   ? boost::json::value_to<std::string>(o.at("name"))
-                                   : "<no name>";
-            return {
-                name,
-                static_cast<int>(o.at("basePoints").as_int64()),
-                lvl_data,
-                thres_data,
-            };
-        }
-
-        // friend void tag_invoke(json::value_from_tag, json::value &v, level const &lvl);
+        friend level tag_invoke(boost::json::value_to_tag<level>, boost::json::value const &);
     };
 
     struct coord
@@ -190,7 +158,7 @@ namespace chilly
         tile_t cell(int x, int y) const;
         tile_t &cell(int x, int y);
         void unexplore_all_nodes();
-        std::unordered_map<direction_t, neighbor_t> const &neighbors(std::shared_ptr<node> origin);
+        std::unordered_map<direction_t, neighbor_t> const &neighbors_of(std::shared_ptr<node> origin);
         result shortestPath();
         std::vector<path> solve();
     };

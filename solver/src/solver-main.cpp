@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
         std::cout << "\n-------------------------\n";
     }
 
-    std::cout << "Depth-First Search running ... " << std::flush;
+    std::cout << "Depth-First Search running ... " << std::endl;
     chilly::solver solver2(level_data);
     auto routes = solver2.solve();
     std::cout << '\n';
@@ -68,27 +68,24 @@ int main(int argc, char *argv[])
     }
     else
     {
-        auto shortest_path = std::min_element(
-            std::begin(routes), std::end(routes),
-            [](chilly::path const &a, chilly::path const &b) -> bool
+        std::sort(std::begin(routes), std::end(routes), [](chilly::path const &a, chilly::path const &b) -> bool
+                  { return a.size() < b.size(); });
+
+        for (std::size_t i = 0; i < std::min(10UL, routes.size()); ++i)
+        {
+            auto path = routes.at(i);
+            std::cout << (path.size() - 1) << ": ";
+            for (int j = 1; j < path.size(); ++j)
             {
-                return a.size() < b.size();
-            });
+                std::cout << (path.at(j).move);
+            }
+            std::cout << '\n';
+        }
 
-        // for (auto const &route : routes)
-        // {
-        //     std::cout << route.size() << ": ";
-        //     for (int i = 1; i < route.size(); ++i)
-        //     {
-        //         // std::cout << route.at(i).x << ' ' << route.at(i).y << "|";
-        //         // std::cout << (route.at(i).move) << ' ' << route.at(i).x << ' ' << route.at(i).y << "| ";
-        //         std::cout << (route.at(i).move);
-        //     }
-        //     std::cout << std::endl;
-        // }
+        auto shortest_path = routes.front();
 
-        std::cout << "\nShortest path has " << (shortest_path->size() - 1) << " moves: ";
-        for (auto hop = shortest_path->begin() + 1; hop != shortest_path->end(); ++hop)
+        std::cout << "\nShortest path has " << (shortest_path.size() - 1) << " moves: ";
+        for (auto hop = shortest_path.begin() + 1; hop != shortest_path.end(); ++hop)
         {
             std::cout << hop->move;
         }
