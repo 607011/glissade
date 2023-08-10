@@ -3,4 +3,4 @@ deploy
 .DS_Store
 *.zip
 Pipfile.lock
-
+build/
