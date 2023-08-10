@@ -1,6 +1,7 @@
 #ifndef __CHILLY_HPP__
 #define __CHILLY_HPP__
 
+#include <cstdlib>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -160,7 +161,7 @@ namespace chilly
         void unexplore_all_nodes();
         std::unordered_map<direction_t, neighbor_t> const &neighbors_of(std::shared_ptr<node> origin);
         result shortestPath();
-        std::vector<path> solve();
+        std::vector<path> solve(std::size_t keep_n_best_routes);
     };
 }
 

@@ -296,7 +296,7 @@ namespace chilly
             int y = origin->y();
             int x_step = 0;
             int y_step = 0;
-            static const std::vector<tile_t> Glidable = {Ice, Coin, Marker, Empty};
+            static const std::vector<tile_t> Glidable = {Ice, Coin, Gold, Marker, Empty};
             std::vector<collectible_t> collected;
             while (std::find(std::begin(Glidable), std::end(Glidable), cell(x + d.x, y + d.y)) != std::end(Glidable))
             {
@@ -395,37 +395,65 @@ namespace chilly
         return result{};
     }
 
-    std::vector<path> solver::solve()
+    std::vector<path> solver::solve(std::size_t keep_n_best_routes)
     {
         if (_root == nullptr)
             return std::vector<path>{};
         unexplore_all_nodes();
         std::vector<path> solutions;
+        solutions.reserve(keep_n_best_routes);
         path route{result_node{_root, NoDirection}};
 
         std::size_t iterations = 0;
         std::function<void(std::shared_ptr<node>)> DFS;
 
-        DFS = [&solutions, &route, &DFS, &iterations, this](std::shared_ptr<node> current_node)
+        DFS = [&solutions, &route, &DFS, &iterations, keep_n_best_routes, this](std::shared_ptr<node> current_node)
         {
             if (current_node->is_exit())
             {
+                // check if all collectibles have been collected along the route
                 std::unordered_map<coord, int, coord> collected;
-                result_node last_hop = route.at(0);
-                for (int i = 1; i < route.size(); ++i)
+                if (!_collectibles.empty())
                 {
-                    auto const &hop = route.at(i);
-                    auto const &neighbor = last_hop.node->neighbors().at(hop.move);
-                    for (auto c : neighbor.collected)
+                    result_node last_hop = route.front();
+                    for (int i = 1; i < route.size(); ++i)
                     {
-                        collected[coord{c.x, c.y}] = c.value;
+                        auto const &hop = route.at(i);
+                        auto const &neighbor = last_hop.node->neighbors().at(hop.move);
+                        for (auto c : neighbor.collected)
+                        {
+                            collected[coord{c.x, c.y}] = c.value;
+                        }
+                        last_hop = hop;
                     }
-                    last_hop = hop;
                 }
                 if (collected.size() == _collectibles.size())
                 {
-                    solutions.push_back(route);
-                    std::cout << "\rSolutions found: " << solutions.size() << std::flush;
+                    if (solutions.empty())
+                    {
+                        solutions.push_back(route);
+                    }
+                    else if (route.size() < solutions.back().size())
+                    {
+                        if (solutions.size() < keep_n_best_routes)
+                        {
+                            solutions.push_back(route);
+                        }
+                        else
+                        {
+                            solutions.back() = route;
+                        }
+                    }
+                    std::sort(std::begin(solutions), std::end(solutions), [](path const &a, path const &b) -> bool
+                              { return a.size() < b.size(); });
+                    auto last_valid = std::unique(std::begin(solutions), std::end(solutions), [](path const &a, path const &b) -> bool
+                                                  { return a.size() == b.size(); });
+                    solutions.erase(last_valid, std::end(solutions));
+                    std::cout << '\r' << iterations << " iterations: ";
+                    for (auto const &route : solutions)
+                    {
+                        std::cout << (route.size() - 1) << ' ';
+                    }
                 }
                 return;
             }

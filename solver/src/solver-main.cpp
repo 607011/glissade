@@ -14,10 +14,14 @@
 
 #include "chilly.hpp"
 
+const std::size_t KEEP_N_BEST_ROUTES = 20;
+
 int main(int argc, char *argv[])
 {
     if (argc < 3)
         return EXIT_FAILURE;
+
+    std::size_t keep_n_best_routes = KEEP_N_BEST_ROUTES;
 
     std::ifstream ifs(argv[1]);
     std::string input(std::istreambuf_iterator<char>(ifs), {});
@@ -48,7 +52,7 @@ int main(int argc, char *argv[])
             current_node = current_node->parent();
             path.insert(std::begin(path), current_node);
         }
-        std::cout << "Shortest path disregarding collectibles has " << (path.size() - 1) << " moves: ";
+        std::cout << "Shortest path ignoring collectibles has " << (path.size() - 1) << " moves: ";
         for (auto cell : path)
         {
             std::cout << cell.move();
@@ -58,7 +62,7 @@ int main(int argc, char *argv[])
 
     std::cout << "Depth-First Search running ... " << std::endl;
     chilly::solver solver2(level_data);
-    auto routes = solver2.solve();
+    auto routes = solver2.solve(keep_n_best_routes);
     std::cout << '\n';
 
     if (routes.empty())
@@ -73,9 +77,8 @@ int main(int argc, char *argv[])
                                       { return a.size() == b.size(); });
         routes.erase(last_valid, std::end(routes));
 
-        for (std::size_t i = 0; i < std::min(10UL, routes.size()); ++i)
+        for (auto const &path : routes)
         {
-            auto const &path = routes.at(i);
             std::cout << (path.size() - 1) << ": ";
             for (int j = 1; j < path.size(); ++j)
             {
