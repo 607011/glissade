@@ -1,6 +1,7 @@
 deploy
 .env
 .DS_Store
+.vscode
 *.zip
 Pipfile.lock
 build/
