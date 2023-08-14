@@ -2,6 +2,7 @@ tile:
   width: 32
   height: 32
 src:
+  - _raw/visited.png
   - _raw/empty.png
   - _raw/ice.png
   - _raw/marker.png
