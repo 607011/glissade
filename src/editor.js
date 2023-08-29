@@ -32,9 +32,10 @@
     let level = null;
     let width;
     let height;
-    function solve() {
+    async function solve() {
         const solver = new ChillySolver([...level]);
-        let [node, iterations] = solver.solve();
+
+        let [node, iterations] = await solver.shortestPath();
         if (node === null) {
             document.querySelector('#path').textContent = '<no solution>';
             return;

@@ -25,10 +25,15 @@ message(STATUS "Boost lib dirs: ${Boost_LIBRARY_DIRS}")
 message(STATUS "Boost libs: ${Boost_LIBRARIES}")
 
 
-add_executable(chilly_solver 
+add_executable(chilly_solver
   src/solver-main.cpp
   src/chilly.cpp
 )
+
+add_executable(tsp
+  src/tsp.cpp
+)
+
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
   if (UNIX)

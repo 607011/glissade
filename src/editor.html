@@ -83,6 +83,10 @@
             padding: 4px;
         }
 
+        input[name="threshold1"], input[name="threshold2"], input[name="threshold3"], input[name="basePoints"] {
+            width: 4em;
+        }
+
         #output {
             font-family: 'Courier New', Courier, monospace;
         }
@@ -159,7 +163,7 @@
         </div>
         <div id="sidebar">
             <span><a href="index.html" target="_blank" id="play">▶️ Play game in new window</a></span>
-            <textarea id="output"></textarea>
+            <textarea id="output" placeholder="Paste level data here ..."></textarea>
             <div>
                 <button id="clear">New game</button>
                 <div style="margin-top: 10px;">
@@ -172,9 +176,9 @@
             <div>
                 <div>Thresholds</div>
                 <div>
-                    <input type="number" name="threshold1" value="10" style="width: 4em" />
-                    <input type="number" name="threshold2" value="11" style="width: 4em" />
-                    <input type="number" name="threshold3" value="12" style="width: 4em" />
+                    <input type="number" name="threshold1" value="10" />
+                    <input type="number" name="threshold2" value="11" />
+                    <input type="number" name="threshold3" value="12" />
                 </div>
             </div>
             <div>

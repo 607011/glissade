@@ -72,6 +72,7 @@ namespace chilly
         int _x;
         int _y;
         bool _explored{false};
+        int _visits{0};
         std::shared_ptr<node> _parent;
         std::unordered_map<direction_t, neighbor_t> _neighbors;
         direction_t _move;
@@ -81,7 +82,7 @@ namespace chilly
         static const int GoldValue = 20;
 
         node();
-        node(tile_t id, int x, int y, bool explored = false);
+        node(tile_t id, int x, int y, bool explored = false, int visits = 0);
         node(std::shared_ptr<node>);
         tile_t id() const;
         int x() const;
@@ -96,7 +97,6 @@ namespace chilly
         bool is_hole() const;
         bool is_exit() const;
         bool is_collectible() const;
-        int value() const;
         std::unordered_map<direction_t, neighbor_t> const &neighbors() const;
         inline void add_neighbor(direction_t direction, neighbor_t node);
     };
@@ -133,8 +133,6 @@ namespace chilly
     {
         static const std::vector<direction> Directions;
 
-        static direction_t opposite(direction_t d);
-
         std::vector<std::vector<tile_t>> _level_data;
         int _level_width;
         int _level_height;
@@ -143,24 +141,31 @@ namespace chilly
         std::unordered_map<coord, int, coord> _collectibles;
         std::unordered_map<coord, std::shared_ptr<node>, coord> _nodes;
         void parse_level_data();
+        void unexplore_all_nodes();
+        std::unordered_map<direction_t, neighbor_t> const &neighbors_of(std::shared_ptr<node> origin);
+
+        static path backtraced_route(std::shared_ptr<node>);
 
     public:
         struct result
         {
             std::size_t iterations{0};
-            std::shared_ptr<node> exit;
+            path route;
         };
 
         solver(std::vector<std::vector<tile_t>> const &level_data);
+        void reset();
         inline int norm_x(int x) const;
         inline int norm_y(int y) const;
         std::vector<tile_t> const &row(int y) const;
         std::vector<tile_t> &row(int y);
         tile_t cell(int x, int y) const;
         tile_t &cell(int x, int y);
-        void unexplore_all_nodes();
-        std::unordered_map<direction_t, neighbor_t> const &neighbors_of(std::shared_ptr<node> origin);
-        result shortestPath();
+
+        std::unordered_map<coord, std::shared_ptr<node>, coord> const &nodes() const;
+        
+        void collect_nodes();
+        result shortest_path();
         std::vector<path> solve(std::size_t keep_n_best_routes);
     };
 }

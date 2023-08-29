@@ -3,11 +3,24 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Chilly - Free the penguin from its slippery labyrinth.">
-    <link rel="stylesheet" href="tiles.css">
-    <link rel="icon" sizes="16x16" href="static/images/favicon.png" />
     <title>Chilly</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Chilly - Free the penguin from his slippery maze.">
+    <link rel="stylesheet" href="tiles.css">
+    <link rel="icon" href="static/images/favicon.ico" />
+    <link rel="icon" sizes="32x32" href="static/images/chilly-32.png" />
+    <link rel="icon" sizes="48x48" href="static/images/chilly-48.png" />
+    <link rel="icon" sizes="64x64" href="static/images/chilly-64.png" />
+    <link rel="icon" sizes="96x96" href="static/images/chilly-96.png" />
+    <link rel="icon" sizes="128x128" href="static/images/chilly-128.png" />
+    <link rel="icon" sizes="192x192" href="static/images/chilly-192.png" />
+    <link rel="apple-touch-icon-precomposed" href="static/images/chilly-80x80.png" />
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="static/images/chilly-152.png" />
+    <link rel="apple-touch-icon-precomposed" sizes="180x180" href="static/images/chilly-180.png" />
+    <link rel="apple-touch-icon-precomposed" sizes="167x167" href="static/images/chilly-167.png" />
+    <meta name="apple-mobile-web-app-title" content="Chilly">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <script async src="static/js/howler.core.min.js"></script>
     <script async src="static/js/bezier.min.js"></script>
     <script async src="chilly.js"></script>
@@ -164,6 +177,7 @@
             flex-direction: row;
             justify-content: space-between;
             align-content: space-between;
+            width: 100%;
         }
 
         #controls {
@@ -191,7 +205,8 @@
             display: none !important;
         }
 
-        #menu, #extras {
+        #menu,
+        #extras {
             display: flex;
             flex-direction: row;
             justify-content: space-between;
@@ -222,8 +237,26 @@
             z-index: 1002;
             opacity: 0.7;
             pointer-events: none;
+            position: absolute;
         }
 
+        .final {
+            font-size: 161%;
+        }
+
+        .line {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0.8;
+        }
+
+        .visited {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0.2;
+        }
     </style>
 </head>
 
@@ -242,7 +275,9 @@
             </div>
             <div id="game"></div>
             <div id="extras">
-                <button id="help">Help!</button>
+                <button id="help">Help</button>
+                <button id="find-route">Find route</button>
+                <!-- <button id="bfs">BFS Animation</button> -->
                 <span id="path"></span>
             </div>
         </div>
@@ -267,7 +302,7 @@
                 <div>Chilly, the penguin, needs your help. Guide him to the green exit fields by pushing him around!
                 </div>
                 <div>Find the routes with the least moves.</div>
-                <div class="pulsating" data-command="proceed">Tap here or [SPACE] to start the glissade</div>
+                <div class="pulsating" data-command="proceed">Tap here or [SPACE] to start the glissade.</div>
             </div>
         </div>
     </template>
@@ -280,10 +315,10 @@
                     <span class="tile star-pale"></span>
                     <span class="tile star-pale"></span>
                 </div>
-                <div>You earned <span class="points-earned"></span> points</div>
-                <div class="pulsating" data-command="proceed">Tap here or [SPACE] to continue with level <span></span>
-                </div>
-                <div class="pulsating" data-command="replay">Tap here or [R] to replay this level</div>
+                <div>You’ve earned <span class="points-earned"></span> points</div>
+                <div class="pulsating" data-command="proceed">Tap here or [SPACE] to continue with level <span></span>.</div>
+                <div class="pulsating" data-command="replay">Tap here or [R] to replay this level.</div>
+                <div class="final" data-command="restart">Congratulations!<br>You’ve reached the final exit.</div>
             </div>
         </div>
     </template>
@@ -292,6 +327,14 @@
             <div>
                 <div>Choose level:</div>
                 <div class="level-list"></div>
+            </div>
+        </div>
+    </template>
+    <template id="tsp-modal">
+        <div class="dialog">
+            <div>
+                <div id="tsp-msg">Calculating ...</div>
+                <div id="tsp-pct">0 %</div>
             </div>
         </div>
     </template>

@@ -6,6 +6,8 @@ mkdir -p deploy
 
 convert _raw/penguin-16x16.png -define png:compression-filter=4 -define png:compression-level=9 -define png:compression-strategy=4 src/static/images/favicon.png
 
+convert -resize x16 -gravity center -crop 16x16+0+0 _raw/penguin-16x16.png -transparent white -colors 256 src/favicon.ico 
+
 rsync -rav --exclude=*.wav --exclude=.DS_Store --delete src/static deploy
 
 for HTMLFILE in index.html editor.html tiles.css
@@ -27,7 +29,7 @@ do
     uglifyjs --compress --mangle < src/$JSFILE > deploy/$JSFILE
 done
 
-for JSFILE in index.js
+for JSFILE in index.js chilly.js
 do
     # javascript-obfuscator src/$JSFILE \
     #     --split-strings true \
@@ -37,4 +39,6 @@ do
         --output deploy/$JSFILE
 done
 
-rsync -rav --delete deploy/* $REMOTE
+if [ -n "${REMOTE}" ]; then
+    rsync -rav --delete deploy/* $REMOTE
+fi

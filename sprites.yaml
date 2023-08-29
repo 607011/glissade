@@ -3,6 +3,13 @@ tile:
   height: 32
 src:
   - _raw/visited.png
+  - _raw/cross.png
+  - _raw/up-arrow.png
+  - _raw/down-arrow.png
+  - _raw/left-arrow.png
+  - _raw/right-arrow.png
+  - _raw/hline.png
+  - _raw/vline.png
   - _raw/empty.png
   - _raw/ice.png
   - _raw/marker.png

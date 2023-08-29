@@ -19,7 +19,12 @@ const std::size_t KEEP_N_BEST_ROUTES = 20;
 int main(int argc, char *argv[])
 {
     if (argc < 3)
+    {
+        std::cerr << "\nUsage: chilly_solver LEVEL_FILE N\n\n"
+                  << "  LEVEL_FILE      JSON file with level data\n"
+                  << "  N               Level number to solve\n\n";
         return EXIT_FAILURE;
+    }
 
     std::size_t keep_n_best_routes = KEEP_N_BEST_ROUTES;
 
@@ -35,36 +40,30 @@ int main(int argc, char *argv[])
     std::cout << '\n'
               << "Breadth-First Search running ... ";
     chilly::solver solver(level_data);
-    chilly::solver::result result = solver.shortestPath();
-    std::cout << '\n';
-    if (result.exit == nullptr)
+    chilly::solver::result result = solver.shortest_path();
+
+    std::cout << "\n\nVisited nodes: " << solver.nodes().size() << '\n';
+    if (result.route.empty())
     {
         std::cout << "BFS: no solution found.\n";
     }
     else
     {
-        std::cout << "Iterations: " << result.iterations << '\n';
-        std::shared_ptr<chilly::node> current_node = result.exit;
-        std::cout << "Found exit at (" << current_node->x() << ", " << current_node->y() << ")\n";
-        std::vector<chilly::node> path = {current_node};
-        while (current_node->has_parent())
+        std::cout << "Iterations: "
+                  << result.iterations << '\n'
+                  << "Shortest path ignoring collectibles has "
+                  << (result.route.size() - 1) << " moves: ";
+        for (auto const &hop : result.route)
         {
-            current_node = current_node->parent();
-            path.insert(std::begin(path), current_node);
-        }
-        std::cout << "Shortest path ignoring collectibles has " << (path.size() - 1) << " moves: ";
-        for (auto cell : path)
-        {
-            std::cout << cell.move();
+            std::cout << hop.move;
         }
         std::cout << "\n-------------------------\n";
     }
 
-    std::cout << "Depth-First Search running ... " << std::endl;
+    std::cout << "Depth-First Search running ... \n";
     chilly::solver solver2(level_data);
     auto routes = solver2.solve(keep_n_best_routes);
-    std::cout << '\n';
-
+    std::cout << "\n\nVisited nodes: " << solver2.nodes().size() << '\n';
     if (routes.empty())
     {
         std::cout << "DFS: no solution found.\n";

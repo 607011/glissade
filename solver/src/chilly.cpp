@@ -1,3 +1,4 @@
+#include <cassert>
 #include <queue>
 
 #include "chilly.hpp"
@@ -58,13 +59,13 @@ namespace chilly
     }
 
     node::node() {}
-    node::node(tile_t id, int x, int y, bool explored)
-        : _id(id), _x(x), _y(y), _explored(explored)
+    node::node(tile_t id, int x, int y, bool explored, int visits)
+        : _id(id), _x(x), _y(y), _explored(explored), _visits(visits)
     {
         /* ... */
     }
     node::node(std::shared_ptr<node> other)
-        : _id(other->_id), _x(other->_x), _y(other->_y), _explored(other->_explored), _parent(other->_parent), _neighbors(other->_neighbors), _move(other->_move)
+        : _id(other->_id), _x(other->_x), _y(other->_y), _explored(other->_explored), _visits(other->_visits), _parent(other->_parent), _neighbors(other->_neighbors), _move(other->_move)
     {
         /* ... */
     }
@@ -134,19 +135,6 @@ namespace chilly
         return _id == Coin || _id == Gold;
     }
 
-    int node::value() const
-    {
-        switch (_id)
-        {
-        case Coin:
-            return CoinValue;
-        case Gold:
-            return GoldValue;
-        default:
-            return 0;
-        }
-    }
-
     std::unordered_map<direction_t, neighbor_t> const &node::neighbors() const
     {
         return _neighbors;
@@ -188,23 +176,6 @@ namespace chilly
             {0, +1, Down},
         }};
 
-    direction_t solver::opposite(direction_t d)
-    {
-        switch (d)
-        {
-        case Down:
-            return Up;
-        case Up:
-            return Down;
-        case Left:
-            return Right;
-        case Right:
-            return Left;
-        case NoDirection:
-            return NoDirection;
-        }
-    }
-
     void solver::parse_level_data()
     {
         for (int y = 0; y < _level_height; ++y)
@@ -215,7 +186,7 @@ namespace chilly
                 {
                 case Player:
                     std::replace(std::begin(row(y)), std::end(row(y)), Player, Ice);
-                    _root = std::make_shared<node>(Player, x, y, true);
+                    _root = std::make_shared<node>(Player, x, y, true, 1);
                     _nodes[coord{x, y}] = _root;
                     break;
                 case Hole:
@@ -242,6 +213,11 @@ namespace chilly
         _level_height = static_cast<int>(level_data.size());
         _level_width = static_cast<int>(level_data.at(0).size());
         parse_level_data();
+    }
+
+    void solver::reset()
+    {
+        _nodes.clear();
     }
 
     inline int solver::norm_x(int x) const
@@ -276,13 +252,18 @@ namespace chilly
 
     void solver::unexplore_all_nodes()
     {
-        for (auto &node : _nodes)
+        for (auto [_coord, node] : _nodes)
         {
-            if (node.second != _root)
+            if (node != _root)
             {
-                node.second->set_explored(false);
+                node->set_explored(false);
             }
         }
+    }
+
+    std::unordered_map<coord, std::shared_ptr<node>, coord> const &solver::nodes() const
+    {
+        return _nodes;
     }
 
     std::unordered_map<direction_t, neighbor_t> const &solver::neighbors_of(std::shared_ptr<node> origin)
@@ -362,7 +343,19 @@ namespace chilly
         return origin->neighbors();
     }
 
-    solver::result solver::shortestPath()
+    path solver::backtraced_route(std::shared_ptr<node> n)
+    {
+        auto current_node = std::make_shared<node>(*n);
+        path route = {result_node{current_node, current_node->move()}};
+        while (current_node->has_parent())
+        {
+            current_node = current_node->parent();
+            route.insert(std::begin(route), result_node{current_node, current_node->move()});
+        }
+        return route;
+    }
+
+    solver::result solver::shortest_path()
     {
         if (_root == nullptr)
             return result{};
@@ -381,7 +374,7 @@ namespace chilly
                 {
                     neighbor.node->set_parent(current_node);
                     neighbor.node->set_move(move);
-                    return result{iterations, neighbor.node};
+                    return result{iterations, backtraced_route(neighbor.node)};
                 }
                 if (!neighbor.node->is_explored())
                 {
@@ -393,6 +386,35 @@ namespace chilly
             }
         }
         return result{};
+    }
+
+    void solver::collect_nodes()
+    {
+        _nodes.clear();
+        if (_root == nullptr)
+            return;
+        std::function<void(std::shared_ptr<node>)> DFS;
+
+        DFS = [&DFS, this](std::shared_ptr<node> current_node)
+        {
+            // std::cout << current_node->x() << ',' << current_node->y() << '\n';
+
+            if (current_node->is_exit())
+            {
+                return;
+            }
+            for (auto [direction, neighbor] : neighbors_of(current_node))
+            {
+                if (!neighbor.node->is_explored())
+                {
+                    neighbor.node->set_explored(true);
+                    DFS(neighbor.node);
+                    neighbor.node->set_explored(false);
+                }
+            }
+        };
+
+        DFS(_root);
     }
 
     std::vector<path> solver::solve(std::size_t keep_n_best_routes)
@@ -409,12 +431,14 @@ namespace chilly
 
         DFS = [&solutions, &route, &DFS, &iterations, keep_n_best_routes, this](std::shared_ptr<node> current_node)
         {
+            // std::cout << current_node->x() << ',' << current_node->y() << '\n';
+
             if (current_node->is_exit())
             {
-                // check if all collectibles have been collected along the route
                 std::unordered_map<coord, int, coord> collected;
                 if (!_collectibles.empty())
                 {
+                    // simulate collection of collectibles along the route
                     result_node last_hop = route.front();
                     for (int i = 1; i < route.size(); ++i)
                     {
@@ -427,6 +451,9 @@ namespace chilly
                         last_hop = hop;
                     }
                 }
+                // the following is true if all collectibles have
+                // been collected along the route, or if there's
+                // nothing to collect
                 if (collected.size() == _collectibles.size())
                 {
                     if (solutions.empty())
@@ -435,6 +462,7 @@ namespace chilly
                     }
                     else if (route.size() < solutions.back().size())
                     {
+                        // limit number of best solutions
                         if (solutions.size() < keep_n_best_routes)
                         {
                             solutions.push_back(route);
@@ -444,8 +472,10 @@ namespace chilly
                             solutions.back() = route;
                         }
                     }
+                    // sort solution by route length to make std::unique() work
                     std::sort(std::begin(solutions), std::end(solutions), [](path const &a, path const &b) -> bool
                               { return a.size() < b.size(); });
+                    // remove duplicates of routes with same length
                     auto last_valid = std::unique(std::begin(solutions), std::end(solutions), [](path const &a, path const &b) -> bool
                                                   { return a.size() == b.size(); });
                     solutions.erase(last_valid, std::end(solutions));
@@ -460,8 +490,6 @@ namespace chilly
             for (auto [direction, neighbor] : neighbors_of(current_node))
             {
                 ++iterations;
-                // TODO???: disallow move in direction opposite to last direction
-                //          unless a coin was collected with the last move
                 if (!neighbor.node->is_explored())
                 {
                     neighbor.node->set_explored(true);
@@ -477,4 +505,5 @@ namespace chilly
 
         return solutions;
     }
+
 };

@@ -8,36 +8,8 @@
         static LevelEnd = 2;
         static GameEnd = 3;
         static SettingsScreen = 4;
+        static ProgressScreen = 5;
     };
-
-    function help() {
-        const solver = new ChillySolver([...level.origData]);
-
-        let [node, _iterations] = solver.solve();
-        if (node === null) {
-            document.querySelector('#path').textContent = '<no solution>';
-            return;
-        }
-        let path = [node];
-        while (node.hasParent()) {
-            node = node.parent;
-            path.unshift(node);
-        }
-        const moves = [];
-        const HINT_NAMES = { 'U': 'hint-up', 'R': 'hint-right', 'D': 'hint-down', 'L': 'hint-left' };
-        let { x, y } = path[0];
-        for (let i = 1; i < path.length; ++i) {
-            let node = path[i];
-            moves.push(node.move);
-            const hint = document.createElement('div');
-            hint.className = `tile hint ${HINT_NAMES[node.move]}`;
-            tiles[y][x].appendChild(hint);
-            x = node.x;
-            y = node.y;
-        }
-        document.querySelector('#path').textContent = `${moves.length}: ${moves.join(' ')}`;
-    }
-
 
     class STORAGE_KEY {
         static LevelNum = 'glissade.level';
@@ -45,10 +17,599 @@
     };
 
     const POINTS = {
-        '$': 5,
-        'G': 20,
+        $: 5,
+        G: 20,
     };
-    let LEVELS;
+
+    const LEVELS = [
+        {
+            "basePoints": 1,
+            "thresholds": [
+                1,
+                2,
+                3
+            ],
+            "name": "Warm-up",
+            "creator": "ola",
+            "data": [
+                "############",
+                "#P        X#",
+                "############"
+            ]
+        },
+        {
+            "creator": "ola",
+            "basePoints": 2,
+            "thresholds": [
+                3,
+                4,
+                5
+            ],
+            "data": [
+                "################",
+                "#  # X         #",
+                "#              #",
+                "#  P           #",
+                "################"
+            ]
+        },
+        {
+            "creator": "ola",
+            "basePoints": 2,
+            "thresholds": [
+                4,
+                6,
+                10
+            ],
+            "data": [
+                "#######X########",
+                "#   #       #  #",
+                "#       # #    #",
+                "#  #           #",
+                "##             #",
+                "#      #       #",
+                "#  #   P   #  ##",
+                "################"
+            ]
+        },
+        {
+            "creator": "ola",
+            "basePoints": 5,
+            "thresholds": [
+                9,
+                11,
+                15
+            ],
+            "data": [
+                "############",
+                "#O.........X",
+                "##    ### ##",
+                "#.........O#",
+                "#.#   #   ##",
+                "#..      # #",
+                "##........ #",
+                "#.........##",
+                "#.  # #  # #",
+                "#......    #",
+                "#  #  P    #",
+                "############"
+            ]
+        },
+        {
+            "creator": "ola",
+            "basePoints": 7,
+            "thresholds": [
+                8,
+                9,
+                11
+            ],
+            "data": [
+                "##############",
+                "# #    #    P#",
+                "#    #     # #",
+                "#     #      #",
+                "#            #",
+                "#        #   #",
+                "# #       #  #",
+                "#      #     #",
+                "#  #         #",
+                "##        #  #",
+                "#      #     #",
+                "#   #        #",
+                "#   #     #  #",
+                "######X#######"
+            ]
+        },
+        {
+            "basePoints": 8,
+            "thresholds": [
+                7,
+                9,
+                13
+            ],
+            "creator": "ola",
+            "data": [
+                "##############",
+                "#          # #",
+                "#  #  #      X",
+                "#           P#",
+                "# ##     #   #",
+                "#    #       #",
+                "##          ##",
+                "#   #        #",
+                "#     #      #",
+                "# # #   #    #",
+                "#    #    #  #",
+                "#     ####   #",
+                "##          ##",
+                "##############"
+            ]
+        },
+        {
+            "thresholds": [
+                7,
+                8,
+                13
+            ],
+            "basePoints": 8,
+            "name": "Out And In",
+            "creator": "ola",
+            "data": [
+                "###########",
+                "#     #   #",
+                "  X#       ",
+                "#  #      #",
+                "#        ##",
+                "# # #     #",
+                "#         #",
+                "#      #  #",
+                "#  P #  # #",
+                "#         #",
+                "###########"
+            ]
+        },
+        {
+            "name": "The Line",
+            "creator": "wid",
+            "basePoints": 12,
+            "thresholds": [
+                16,
+                17,
+                25
+            ],
+            "data": [
+                "####################",
+                "#             # #  #",
+                "#  #   ##    # #   #",
+                "# #     # #  #O    #",
+                "#  ##        #     #",
+                "#      #    #      #",
+                "##    #            #",
+                "#   #         ##   #",
+                "#  #     #         #",
+                "#                  #",
+                "#  #    #        # #",
+                "#   # #        #   #",
+                "##     #        #  #",
+                "#     ## #  #      #",
+                "#    #       # #   #",
+                "#             #    #",
+                "# #P   #          ##",
+                "# ##################",
+                "#O                X#",
+                "####################"
+            ]
+        },
+        {
+            "name": "Around The World",
+            "creator": "wid",
+            "basePoints": 17,
+            "thresholds": [
+                29,
+                30,
+                40
+            ],
+            "data": [
+                "####################",
+                "#          ##      #",
+                "##     #   #    #  #",
+                "#  O# # #     # #  #",
+                "#  #         #     #",
+                "# #    #    #    # #",
+                "#   #   #  #       #",
+                "#    #  #### #     #",
+                "#      ##  #  #    #",
+                "# #     #OX#P    # #",
+                "#  ###  #  ##   #  #",
+                "#     # ####       #",
+                "# #  #  ##   #    ##",
+                "#  #   #    #   #  #",
+                "#    #             #",
+                "#  #               #",
+                "# #    #     # #   #",
+                "#   #  #    # #    #",
+                "#  ###   #       # #",
+                "####################"
+            ]
+        },
+        {
+            "name": "Roman Rooms",
+            "creator": "wid",
+            "basePoints": 18,
+            "thresholds": [
+                39,
+                44,
+                50
+            ],
+            "data": [
+                "####################",
+                "# #      #   ##   P#",
+                "#    ##      #     #",
+                "#  # ###  #  #    ##",
+                "#     #    # # #   #",
+                "#     #      #   # #",
+                "###  ## ########## #",
+                "#     #      #O    #",
+                "##    ###      #   #",
+                "#   ###         #  #",
+                "##    #    #     # #",
+                "# #   #            #",
+                "#O    #  #        ##",
+                "###  ####### # #####",
+                "#     #   #  #    X#",
+                "##   ##    # #    ##",
+                "#   # #      # #   #",
+                "#     ##    ##  #  #",
+                "# #          ##    #",
+                "####################"
+            ]
+        },
+        {
+            "thresholds": [
+                17,
+                18,
+                24
+            ],
+            "basePoints": 20,
+            "name": "Plusminus",
+            "creator": "wid",
+            "data": [
+                "####################",
+                "#O       #       # #",
+                "##         #   #  ##",
+                "#        #    #    #",
+                "#           #      #",
+                "#  # #             #",
+                "#  #  #         X  #",
+                "#   #    #    #    #",
+                "#      #     ##   ##",
+                "#  #            ## #",
+                "#  ##              #",
+                "#       #       #  #",
+                "#   #       #  ### #",
+                "#   # #  # #    #  #",
+                "#   #              #",
+                "# #                #",
+                "#     #   #    ### #",
+                "# P    #           #",
+                "#    # O#    #     #",
+                "####################"
+            ]
+        },
+        {
+            "basePoints": 20,
+            "thresholds": [
+                26,
+                30,
+                36
+            ],
+            "data": [
+                "####################",
+                "#   # # #         ##",
+                "#      ###  #    O #",
+                "#       #   #  #   #",
+                "##  # #  # #       #",
+                "#       #    #   ###",
+                "#      # #  #      #",
+                "##      #       ## #",
+                "#    ### ### ## #  #",
+                "#    #P #          #",
+                "# O               ##",
+                "#       #          #",
+                "#        # #       #",
+                "#   #   #   #    # #",
+                "#    #   #  #  #   #",
+                "#  #    #      ## ##",
+                "#     #  #    ##   #",
+                "#     # # #        X",
+                "# #  ##    #    #  #",
+                "####################"
+            ]
+        },
+        {
+            "thresholds": [
+                25,
+                26,
+                35
+            ],
+            "basePoints": 21,
+            "name": "Choices",
+            "creator": "ola",
+            "data": [
+                "####################",
+                "#. #          #   P#",
+                "#                  #",
+                "#                  #",
+                "#           #   #  #",
+                "#     #            #",
+                "#                  #",
+                "#   #     #        #",
+                "#              #  ##",
+                "#      #           #",
+                "# #              # #",
+                "#  #       #    #  #",
+                "#     #            #",
+                "#  #               #",
+                "#        #         #",
+                "#   #           #  #",
+                "#           #      #",
+                "#                  #",
+                "#                  #",
+                "#          #   #   #",
+                "#  O #          #  #",
+                "#  O     # #       X",
+                "#  #   ##      #   #",
+                "####################"
+            ]
+        },
+        {
+            "thresholds": [
+                20,
+                21,
+                28
+            ],
+            "basePoints": 23,
+            "name": "WTH?",
+            "creator": "ola",
+            "data": [
+                "########O######",
+                "#    #    #   #",
+                "#  #   #   #  #",
+                "#    #  #     #",
+                "#      # #    #",
+                "# # P    #   ##",
+                "#     #   #   #",
+                "######        #",
+                "# #       X   #",
+                "# #       #  ##",
+                "#    #      # #",
+                "#   ###       #",
+                "#      ##     #",
+                "##        #   #",
+                "#     #    # ##",
+                "# ##     #    #",
+                "#         #   #",
+                "# O    #    # #",
+                "#   #         #",
+                "#          #  #",
+                "######## ######"
+            ]
+        },
+        {
+            "basePoints": 23,
+            "creator": "wid",
+            "thresholds": [
+                16,
+                19,
+                29
+            ],
+            "data": [
+                "####################",
+                "#    #  #      #   #",
+                "#   #    #   #     #",
+                "# #      ##       ##",
+                "#       ##   #     #",
+                "#  #      #        #",
+                "#     #   ##  # ## #",
+                "#         #        #",
+                "#  #   # #    #    #",
+                "##  #   P#X#O   # ##",
+                "#   #    #   ##    #",
+                "#      ### #     # #",
+                "#  #     #         #",
+                "###      #         #",
+                "#   # #  ###  #   ##",
+                "#    #   # #       #",
+                "# # #       #     ##",
+                "#  #  # ##     #   #",
+                "#O       #   #   # #",
+                "####################"
+            ]
+        },
+        {
+            "thresholds": [
+                12,
+                13,
+                23
+            ],
+            "basePoints": 24,
+            "name": "Torus",
+            "creator": "ola",
+            "data": [
+                "### ############# ###",
+                "     #    #          ",
+                "#                  P#",
+                "##  #          # #  #",
+                "#            #      #",
+                "#                  ##",
+                "    #    #       O   ",
+                "#     #             #",
+                "#  #        # #     #",
+                "#       #           #",
+                "##   #           # ##",
+                "#           #       #",
+                "#       #           #",
+                "##  #       #      ##",
+                "   O    #       #    ",
+                "#         #  #      #",
+                "#    #              #",
+                "#      #          # #",
+                "#X                  #",
+                "               #     ",
+                "### ############# ###"
+            ]
+        },
+        {
+            "thresholds": [
+                18,
+                19,
+                25
+            ],
+            "basePoints": 27,
+            "name": "<no name>",
+            "creator": "ola",
+            "data": [
+                "#############       ",
+                "#    #     ##       ",
+                "#           #       ",
+                "#  # #  #   #       ",
+                "#  #   #    X       ",
+                "#      #  # ########",
+                "#   #       #      #",
+                "# #        #     # #",
+                "#   #         #    #",
+                "#     #            #",
+                "#        ##   #    #",
+                "#       #      #   #",
+                "#   #              #",
+                "#          ##     ##",
+                "##     #      #    #",
+                "#    #             #",
+                "#           #     ##",
+                "#        #         #",
+                "##           # ##  #",
+                "#     # #  #       #",
+                "#           # #P # #",
+                "#       #          #",
+                "#    #        #    #",
+                "####################"
+            ]
+        },
+        {
+            "thresholds": [
+                14,
+                15,
+                20
+            ],
+            "basePoints": 32,
+            "name": "Torus 1",
+            "creator": "ola",
+            "data": [
+                "####################",
+                "#  #         P#  O #",
+                "#          #       #",
+                "#    #             #",
+                "#           #   #  #",
+                "#     #            #",
+                "#                  #",
+                "#   #     #        #",
+                "#              #  ##",
+                "       #            ",
+                "# #              # #",
+                "#  #       #    #  #",
+                "#     #       #    #",
+                "#  #         #     #",
+                "#        #         #",
+                "#   #           #  #",
+                "#           #      #",
+                "#  #              ##",
+                "#    #             #",
+                "#          #   #   #",
+                "#  O #          #  #",
+                "##  #    # #       X",
+                "#  #   #       #   #",
+                "####################"
+            ]
+        },
+        {
+            "thresholds": [
+                6,
+                7,
+                8
+            ],
+            "basePoints": 2,
+            "name": "Collector",
+            "best": "RLURDU",
+            "data": [
+                "#####X#",
+                "#$    #",
+                "#    $#",
+                "#    ##",
+                "#$ P$ #",
+                "#     #",
+                "#######"
+            ]
+        },
+        {
+            "basePoints": 7,
+            "best": "DLULDLURLDLUDRDLRULURUD",
+            "creator": "ola",
+            "thresholds": [
+                23,
+                28,
+                36
+            ],
+            "data": [
+                "##############",
+                "#$#  $ #    P#",
+                "#    #     # #",
+                "#     #      #",
+                "#     $      #",
+                "#        #   #",
+                "# # $     #  #",
+                "#      #     #",
+                "#  #       $ #",
+                "## $      #  #",
+                "#      #     #",
+                "#   #        #",
+                "#$  #     #  #",
+                "######X#######"
+            ]
+        },
+        {
+            "name": "Be Careful",
+            "creator": "ola",
+            "basePoints": 10,
+            "thresholds": [
+                25,
+                27,
+                36
+            ],
+            "best": "LURLURURDRDLDLURDUURDLDLU",
+            "data": [
+                "#########X##########",
+                "##    $# $        $#",
+                "#$      O          #",
+                "#          #       #",
+                "#                 ##",
+                "#                  #",
+                "#                  #",
+                "#                  #",
+                "#   #              #",
+                "#     # #          #",
+                "#           #      #",
+                "#      #      $    #",
+                "#                 ##",
+                "#  #          $   O#",
+                "#      $ #         #",
+                "#       #     #    #",
+                "# #                #",
+                "#                  #",
+                "#        P         #",
+                "####################"
+            ]
+        }
+    ];
     const DEBUG = true;
     const START_LEVEL = 0;
     const el = {};
@@ -67,21 +628,15 @@
         origData: [],
         data: [],
         score: 0,
-        currentIdx: (function () {
-            let levelNum = parseInt(localStorage.getItem(STORAGE_KEY.LevelNum));
-            if (isNaN(levelNum)) {
-                levelNum = START_LEVEL;
-            }
-            if (levelNum < 0) {
-                levelNum = 0;
-            }
-            return levelNum;
-        })(),
+        width: 0,
+        height: 0,
+        cellAt: function (x, y) {
+            return level.data[(y + level.height) % level.height][(x + level.width) % level.width];
+        },
+        currentIdx: 0,
     };
     let state = State.PreInit;
     let prevState;
-    let width = 0;
-    let height = 0;
     let t0, t1, animationDuration;
     let pointsEarned;
     let tiles = [[]];
@@ -92,17 +647,132 @@
     let easing = null;
     let sounds = {};
 
-    function placePlayerAt(x, y) {
-        player.x = x;
-        player.y = y;
-        player.el.style.left = `${Tile.Size * x}px`;
-        player.el.style.top = `${Tile.Size * y}px`;
+    // function sleep(delay) {
+    //     return new Promise(resolve => setTimeout(resolve, delay));
+    // }
+
+    // async function bfsAnimate() {
+    //     el.bfsButton.disabled = true;
+    //     const Directions = {
+    //         L: { dx: -1, dy: 0 },
+    //         R: { dx: +1, dy: 0 },
+    //         D: { dx: 0, dy: +1 },
+    //         U: { dx: 0, dy: -1 },
+    //     };
+    //     const norm_x = x => (x + level.width) % level.width;
+    //     const norm_y = y => (y + level.height) % level.height;
+    //     const SLEEP_MS = 67;
+    //     const handleVisit = async (dst, move, src) => {
+    //         const visited = document.createElement('span');
+    //         visited.className = 'tile visited';
+    //         tiles[dst.y][dst.x].appendChild(visited);
+    //         if (move && src) {
+    //             el.game.querySelectorAll('.line').forEach(el => el.remove());
+    //             const { dx, dy } = Directions[move];
+    //             let x = norm_x(src.x + dx);
+    //             let y = norm_y(src.y + dy);
+    //             if (dst.id !== Tile.Hole) {
+    //                 while (norm_x(x) !== dst.x || norm_y(y) !== dst.y) {
+    //                     const line = document.createElement('span');
+    //                     line.className = 'tile line';
+    //                     if (norm_x(x + dx) === dst.x && norm_y(y + dy) === dst.y) {
+    //                         switch (move) {
+    //                             case 'L': line.classList.add('left-arrow'); break;
+    //                             case 'R': line.classList.add('right-arrow'); break;
+    //                             case 'U': line.classList.add('up-arrow'); break;
+    //                             case 'D': line.classList.add('down-arrow'); break;
+    //                             default: break;
+    //                         }
+    //                     }
+    //                     else {
+    //                         line.classList.add(dx === 0 ? 'vline' : 'hline');
+    //                     }
+    //                     tiles[norm_y(y)][norm_x(x)].appendChild(line);
+    //                     x += dx;
+    //                     y += dy;
+    //                 }
+
+    //             }
+    //         }
+    //         await sleep(SLEEP_MS);
+    //     };
+    //     el.game.querySelectorAll('.visited, .line').forEach(el => el.remove());
+    //     const solver = new ChillySolver([...level.origData]);
+    //     await solver.shortestPath(handleVisit);
+    //     el.bfsButton.disabled = false;
+    // }
+
+    async function findRoute() {
+        el.findRouteButton.disabled = true;
+        const solver = new ChillySolver([...level.origData]);
+        el.game.querySelectorAll('.cross').forEach(el => el.remove());
+        let t0;
+        t0 = performance.now();
+        const nodes = solver.findNodes();
+        console.log(`Nodes found: ${nodes.length}; dt = ${(performance.now() - t0)} ms`, nodes);
+        for (const node of nodes) {
+            const cross = document.createElement('span');
+            cross.className = `tile cross`;
+            tiles[node.y][node.x].appendChild(cross);
+        }
+        // console.debug(solver.edges);
+        t0 = performance.now();
+        const [_source, _destination, route] = await solver.dijkstra2D();
+        console.log(`Route found, dt = ${(performance.now() - t0)} ms`);
+        console.log(route);
+        el.findRouteButton.disabled = false;
+        return nodes;
     }
+
+    async function help() {
+        const solver = new ChillySolver([...level.origData]);
+
+        let [node, iterations] = await solver.shortestPath();
+        console.debug(`iterations = ${iterations}`);
+        console.debug(`nodes = ${solver.nodeCount}`);
+        if (node === null) {
+            document.querySelector('#path').textContent = '<no solution>';
+            return;
+        }
+        let path = [node];
+        while (node.hasParent()) {
+            node = node.parent;
+            path.unshift(node);
+        }
+        const moves = [];
+        const HINT_NAMES = { 'U': 'hint-up', 'R': 'hint-right', 'D': 'hint-down', 'L': 'hint-left' };
+        let { x, y } = path[0];
+        for (let i = 1; i < path.length; ++i) {
+            let node = path[i];
+            moves.push(node.move);
+            const hint = document.createElement('div');
+            hint.className = `tile hint ${HINT_NAMES[node.move]}`;
+            if (tiles[y][x].children.length === 0) {
+                tiles[y][x].appendChild(hint);
+            }
+            x = node.x;
+            y = node.y;
+        }
+        document.querySelector('#path').textContent = `${moves.length}: ${moves.join(' ')}`;
+    }
+
+    function placePlayerAt(x, y) {
+        player.x = (x + level.width) % level.width;
+        player.y = (y + level.height) % level.height;
+        player.el.style.left = `${Tile.Size * player.x}px`;
+        player.el.style.top = `${Tile.Size * player.y}px`;
+    }
+
+    function scrollIntoView() {
+        player.el.scrollIntoView();
+    }
+
     function standUpright() {
         for (const c of ['penguin-left', 'penguin-right', 'penguin-up', 'penguin-down']) {
             player.el.classList.remove(c);
         }
     }
+
     function teleport() {
         sounds.teleport.play();
         const otherHole = holes.filter(v => v.x !== player.x || v.y !== player.y)[0];
@@ -110,21 +780,24 @@
         scrollIntoView();
         standUpright();
     }
+
     function rockHit() {
         sounds.rock.play();
         standUpright();
     }
+
     function updateMoveCounter() {
         el.moveCount.title = player.moves.join('');
         el.moveCount.textContent = player.moves.length;
     }
+
     function animate() {
         const dt = performance.now() - t0;
         const f = easing(dt / animationDuration);
         const dx = f * (player.dest.x - player.x);
         const dy = f * (player.dest.y - player.y);
-        const x = player.x + Math.round(dx);
-        const y = player.y + Math.round(dy);
+        const x = (player.x + Math.round(dx) + level.width) % level.width;
+        const y = (player.y + Math.round(dy) + level.height) % level.height;
         if (level.data[y][x] === Tile.Coin) {
             tiles[y][x].classList.replace('coin', 'ice');
             level.data[y] = level.data[y].substring(0, x) + Tile.Ice + level.data[y].substring(x + 1);
@@ -132,8 +805,8 @@
             el.levelScore.textContent = player.score;
             sounds.coin.play();
         }
-        player.el.style.left = `${Tile.Size * (player.x + dx)}px`;
-        player.el.style.top = `${Tile.Size * (player.y + dy)}px`;
+        player.el.style.left = `${Tile.Size * ((player.x + dx + level.width) % level.width)}px`;
+        player.el.style.top = `${Tile.Size * ((player.y + dy + level.height) % level.height)}px`;
         scrollIntoView();
         if (performance.now() > t1) {
             placePlayerAt(player.dest.x, player.dest.y);
@@ -153,34 +826,39 @@
             requestAnimationFrame(animate);
         }
     }
+
     function move(dx, dy) {
         if (isMoving || exitReached)
             return;
         let hasMoved = false;
         let { x, y } = player;
-        while ([Tile.Ice, Tile.Coin, Tile.Marker].includes(level.data[y + dy][x + dx])) {
+        let xStep = 0;
+        let yStep = 0;
+        while ([Tile.Ice, Tile.Coin, Tile.Marker].includes(level.cellAt(x + dx, y + dy))) {
             x += dx;
             y += dy;
+            xStep += dx;
+            yStep += dy;
         }
-        if (x < player.x) {
-            player.el.classList.add('penguin-left');
-            hasMoved = true;
-        }
-        else if (x > player.x) {
+        if (xStep > 0) {
             player.el.classList.add('penguin-right');
             hasMoved = true;
         }
-        else if (y < player.y) {
+        else if (xStep < 0) {
+            player.el.classList.add('penguin-left');
+            hasMoved = true;
+        }
+        else if (yStep < 0) {
             player.el.classList.add('penguin-up');
             hasMoved = true;
         }
-        else if (y > player.y) {
+        else if (yStep > 0) {
             player.el.classList.add('penguin-down');
             hasMoved = true;
         }
-        exitReached = level.data[y + dy][x + dx] === Tile.Exit;
-        holeEntered = level.data[y + dy][x + dx] === Tile.Hole;
-        const dist = Math.abs((x - player.x) + (y - player.y));
+        exitReached = level.cellAt(x + dx, y + dy) === Tile.Exit;
+        holeEntered = level.cellAt(x + dx, y + dy) === Tile.Hole;
+        const dist = Math.abs(xStep) + Math.abs(yStep);
         if (exitReached || holeEntered || dist > 0) {
             player.distance += dist;
             isMoving = true;
@@ -200,38 +878,40 @@
         }
         return hasMoved;
     }
+
     function moveUp() {
         return move(0, -1);
     }
+
     function moveDown() {
         return move(0, +1);
     }
+
     function moveLeft() {
         return move(-1, 0);
     }
+
     function moveRight() {
         return move(+1, 0);
     }
+
     function onKeyPressed(e) {
-        console.debug(e);
+        // console.debug(e);
         if (!DEBUG && e.type === 'keypress' && e.key == 'r' && (e.ctrlKey || e.metaKey)) {
             // prevent reloading of page
             e.preventDefault();
             e.stopImmediatePropagation();
             return;
         }
-        if (e.type === 'keydown' && e.key === 'Escape') {
-            if (state === State.SettingsScreen) {
-                removeOverlay();
-                restoreState();
-            }
-            else if (state != State.SplashScreen) {
-                showSettingsScreen();
-            }
-            e.preventDefault();
-            return;
-        }
         switch (state) {
+            case State.GameEnd:
+                if (e.type === 'keypress') {
+                    if (e.key === 'r') {
+                        replayLevel();
+                    }
+                    e.preventDefault();
+                }
+                break;
             case State.LevelEnd:
                 if (e.type === 'keypress') {
                     if (e.key === ' ') {
@@ -244,7 +924,12 @@
                 }
                 break;
             case State.SettingsScreen:
-
+                if (e.type === 'keydown' && e.key === 'Escape') {
+                    removeOverlay();
+                    restoreState();
+                    e.preventDefault();
+                    return;
+                }
                 break;
             case State.SplashScreen:
                 if (e.type === 'keypress' && e.key === ' ') {
@@ -282,15 +967,30 @@
                         hasMoved = moveRight();
                         move = 'R';
                         break;
+                    case 'Escape':
+                        if (e.type === 'keydown') {
+                            showSettingsScreen();
+                            e.preventDefault();
+                            return;
+                        }
+                        break;
                 }
                 if (hasMoved) {
                     player.moves.push(move);
                 }
                 break;
             default:
+                if (e.type === 'keydown' && e.key === 'Escape') {
+                    if (state != State.SplashScreen) {
+                        showSettingsScreen();
+                    }
+                    e.preventDefault();
+                    return;
+                }
                 break;
         }
     }
+
     function onClick(e) {
         const dx = (e.target.offsetLeft / Tile.Size) - player.x;
         const dy = (e.target.offsetTop / Tile.Size) - player.y;
@@ -312,10 +1012,11 @@
         }
         checkAudio();
     }
+
     function generateScene() {
         const scene = document.createElement('div');
-        scene.style.gridTemplateColumns = `repeat(${width}, ${Tile.Size}px)`;
-        scene.style.gridTemplateRows = `repeat(${height}, ${Tile.Size}px)`;
+        scene.style.gridTemplateColumns = `repeat(${level.width}, ${Tile.Size}px)`;
+        scene.style.gridTemplateRows = `repeat(${level.height}, ${Tile.Size}px)`;
         holes = [];
         tiles = [];
         for (let y = 0; y < level.data.length; ++y) {
@@ -359,9 +1060,11 @@
         }
         return scene;
     }
+
     function replacePlayerWithIceTile() {
         level.data[player.y] = level.data[player.y].substring(0, player.x) + Tile.Ice + level.data[player.y].substring(player.x + 1);
     }
+
     function getNumStars() {
         const numStars = 3 - LEVELS[level.currentIdx].thresholds.findIndex(threshold => player.moves.length <= threshold);
         if (numStars === 4) {
@@ -369,6 +1072,7 @@
         }
         return numStars;
     }
+
     function animatePointsEarned() {
         const ANIMATION_DURATION = 750;
         const dt = performance.now() - t0;
@@ -378,92 +1082,109 @@
             window.requestAnimationFrame(animatePointsEarned);
         }
     }
+
     function onExitReached() {
         sounds.exit.play();
         standUpright();
+        // console.debug(level.currentIdx, LEVELS.length, level.currentIdx < LEVELS.length);
         setState(State.LevelEnd);
-        console.debug(level.currentIdx, LEVELS.length, level.currentIdx < LEVELS.length)
-        if (level.currentIdx < LEVELS.length) {
-            const congrats = el.congratsTemplate.content.cloneNode(true);
-            congrats.querySelector('div.pulsating > span').textContent = level.currentIdx + 1 + 1;
-            const stars = congrats.querySelectorAll('.star-pale');
-            const numStars = getNumStars();
-            for (let i = 0; i < numStars; ++i) {
-                stars[i].classList.replace('star-pale', 'star');
-                stars[i].classList.add('pulse');
+        const congrats = el.congratsTemplate.content.cloneNode(true);
+        congrats.querySelector('div.pulsating > span').textContent = level.currentIdx + 1 + 1;
+        const stars = congrats.querySelectorAll('.star-pale');
+        const numStars = getNumStars();
+        for (let i = 0; i < numStars; ++i) {
+            stars[i].classList.replace('star-pale', 'star');
+            stars[i].classList.add('pulse');
+        }
+        congrats.querySelector('div>div>div').innerHTML = (function () {
+            switch (numStars) {
+                case 0:
+                    return 'Awww ... you could do better';
+                case 1:
+                    return 'Well done, but there&rsquo;s room for improvement.';
+                case 2:
+                    return 'Good job! But you could do a tiny bit better.';
+                case 3:
+                    return 'Excellent! You’ve scored perfectly.';
+                default:
+                    return;
             }
-            congrats.querySelector('div>div>div').innerHTML = (function () {
-                switch (numStars) {
-                    case 0:
-                        return 'Awww ... you could do better';
-                    case 1:
-                        return 'Well done, but there&rsquo;s room for improvement.';
-                    case 2:
-                        return 'Good job! But you could do a little bit better.';
-                    case 3:
-                        return 'Excellent! You scored perfectly.';
-                    default:
-                        return;
-                }
-            })();
-            el.pointsEarned = congrats.querySelector('.points-earned');
-            el.proceed = congrats.querySelector('[data-command="proceed"]');
-            el.replay = congrats.querySelector('[data-command="replay"]');
+        })();
+        el.pointsEarned = congrats.querySelector('.points-earned');
+        el.proceed = congrats.querySelector('[data-command="proceed"]');
+        if (level.currentIdx + 1 < LEVELS.length) {
+            congrats.querySelector('[data-command="restart"]').remove();
             el.proceed.addEventListener('click', gotoNextLevel, { capture: true, once: true });
-            el.replay.addEventListener('click', replayLevel, { capture: true, once: true });
-            el.overlayBox.replaceChildren(congrats);
-            t0 = performance.now();
-            pointsEarned = getLevelScore();
-            animatePointsEarned();
         }
         else {
-            // ...
+            el.proceed.remove();
+            setState(State.GameEnd);
         }
+        el.replay = congrats.querySelector('[data-command="replay"]');
+        el.replay.addEventListener('click', replayLevel, { capture: true, once: true });
+        el.overlayBox.replaceChildren(congrats);
+        t0 = performance.now();
+        pointsEarned = getLevelScore();
+        animatePointsEarned();
         showOverlay();
     }
+
+    /**
+     * @return  true, if level has collectibles, false otherwise
+     */
+    function levelHasCollectibles() {
+        return level.origData.some(row => row.match('[\$G]'));
+    }
+
     function setLevel(levelData) {
         level.data = [...levelData];
         level.origData = [...levelData];
-        width = level.data[0].length;
-        height = level.data.length;
+        level.width = level.data[0].length;
+        level.height = level.data.length;
         el.levelNum.textContent = `Level ${level.currentIdx + 1}`;
         player.moves = [];
         player.distance = 0;
         updateMoveCounter();
         el.scene = generateScene();
         el.game.replaceChildren(el.scene, player.el);
-        el.extras.style.width = `${el.gameContainer.clientWidth}px`;
         replacePlayerWithIceTile();
+        el.findRouteButton.disabled = !levelHasCollectibles();
     }
+
     function restoreState() {
         state = prevState;
     }
+
     function setState(newState) {
-        console.debug(`setState(${state}) ${prevState} -> ${state}`);
         prevState = state;
         state = newState;
     }
+
     function showOverlay() {
         el.overlay.classList.remove('hidden');
         el.overlayBox.classList.remove('hidden');
     }
+
     function removeOverlay() {
         el.overlay.classList.add('hidden');
         el.overlayBox.classList.add('hidden');
         el.overlayBox.replaceChildren();
     }
+
     function play() {
         el.overlayBox.removeEventListener('click', play);
         setState(State.Playing);
         removeOverlay();
         checkAudio();
     }
+
     function replayLevel() {
         el.replay.addEventListener('click', replayLevel, { capture: true, once: true });
         player.score -= level.score;
         resetLevel();
         play();
     }
+
     function maxLevelNum() {
         let maxLvl = parseInt(localStorage.getItem(STORAGE_KEY.MaxLevelNum));
         if (isNaN(maxLvl)) {
@@ -471,15 +1192,18 @@
         }
         return Math.max(level.currentIdx, Math.min(LEVELS.length, maxLvl));
     }
+
     function getLevelScore() {
         return (getNumStars() + 1) * (level.score + LEVELS[level.currentIdx].basePoints);
     }
+
     function gotoLevel(idx) {
         level.currentIdx = idx;
         localStorage.setItem(STORAGE_KEY.LevelNum, level.currentIdx);
         resetLevel();
         play();
     }
+
     function gotoNextLevel() {
         el.proceed.removeEventListener('click', gotoNextLevel);
         player.score += pointsEarned;
@@ -490,6 +1214,7 @@
         resetLevel();
         play();
     }
+
     function showSplashScreen() {
         setState(State.SplashScreen);
         const splash = el.splashTemplate.content.cloneNode(true);
@@ -497,6 +1222,7 @@
         el.overlayBox.addEventListener('click', play, { capture: true, once: true });
         showOverlay();
     }
+
     function showSettingsScreen() {
         setState(State.SettingsScreen);
         const settings = el.settingsTemplate.content.cloneNode(true);
@@ -517,6 +1243,7 @@
         el.overlayBox.replaceChildren(settings);
         showOverlay();
     }
+
     function resetLevel() {
         exitReached = false;
         level.score = 0;
@@ -536,11 +1263,23 @@
         }
         setLevel(levelData);
     }
+
     function restartGame() {
+        level.currentIdx = (function () {
+            let levelNum = Math.min(LEVELS.length - 1, parseInt(localStorage.getItem(STORAGE_KEY.LevelNum)));
+            if (isNaN(levelNum)) {
+                levelNum = START_LEVEL;
+            }
+            if (levelNum < 0) {
+                levelNum = 0;
+            }
+            return levelNum;
+        })();
         resetLevel();
     }
+
     function checkAudio(e) {
-        if (typeof e === 'object' && e.type == 'click') {
+        if (typeof e === 'object' && e.type === 'click') {
             Howler.mute(!Howler._muted);
         }
         if (Howler._muted) {
@@ -550,6 +1289,7 @@
             el.loudspeaker.classList.replace('speaker-muted', 'speaker');
         }
     }
+
     function setupAudio() {
         sounds.coin = new Howl({
             src: ['static/sounds/coin.mp3', 'static/sounds/coin.webm', 'static/sounds/coin.ogg'],
@@ -570,10 +1310,11 @@
         Howler.mute(false);
         checkAudio();
     }
+
     function main() {
         el.game = document.querySelector('#game');
         el.game.addEventListener('click', onClick);
-        el.gameContainer = document.querySelector('#game-container');
+        // el.gameContainer = document.querySelector('#game-container');
         el.totalScore = document.querySelector('#total-score');
         el.levelScore = document.querySelector('#level-score');
         el.levelNum = document.querySelector('#level-num');
@@ -586,36 +1327,34 @@
         el.chooseLevel.addEventListener('click', showSettingsScreen);
         el.loudspeaker = document.querySelector('#loudspeaker');
         el.loudspeaker.addEventListener('click', checkAudio);
+        el.findRouteButton = document.querySelector('#find-route');
+        el.findRouteButton.addEventListener('click', findRoute);
         el.helpButton = document.querySelector('#help');
         el.helpButton.addEventListener('click', help);
+        // el.bfsButton = document.querySelector('#bfs');
+        // el.bfsButton.addEventListener('click', bfsAnimate);
         el.splashTemplate = document.querySelector("#splash");
         el.congratsTemplate = document.querySelector("#congrats");
         el.settingsTemplate = document.querySelector("#settings");
         player.el = document.createElement('span');
         player.el.className = 'tile penguin';
         setupAudio();
-        fetch('static/levels.json')
-            .then(response => response.json())
-            .then(json => {
-                LEVELS = json;
-                window.addEventListener('keydown', onKeyPressed);
-                window.addEventListener('keypress', onKeyPressed);
-                document.querySelector('.control.arrow-up').addEventListener('click', () => {
-                    window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'w' }));
-                });
-                document.querySelector('.control.arrow-down').addEventListener('click', () => {
-                    window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 's' }));
-                });
-                document.querySelector('.control.arrow-right').addEventListener('click', () => {
-                    window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'd' }));
-                });
-                document.querySelector('.control.arrow-left').addEventListener('click', () => {
-                    window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'a' }));
-                });
-                restartGame();
-                showSplashScreen();
-            })
-            .catch(e => console.error(e));
+        window.addEventListener('keydown', onKeyPressed);
+        window.addEventListener('keypress', onKeyPressed);
+        document.querySelector('.control.arrow-up').addEventListener('click', () => {
+            window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'w' }));
+        });
+        document.querySelector('.control.arrow-down').addEventListener('click', () => {
+            window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 's' }));
+        });
+        document.querySelector('.control.arrow-right').addEventListener('click', () => {
+            window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'd' }));
+        });
+        document.querySelector('.control.arrow-left').addEventListener('click', () => {
+            window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'a' }));
+        });
+        restartGame();
+        showSplashScreen();
         document.querySelector('#controls').classList.remove('hidden');
     }
     window.addEventListener('load', main);
