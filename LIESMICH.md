@@ -2,17 +2,20 @@
 
 **Mini-Game, das von Pokémon Crystal Ice Path inspiriert ist**
 
-Schubse den Pinguin Chilly mit den wenigsten Zügen zum Ziel. Der eisige Boden ist so schlittrig, dass er nur an Hindernissen zum Halt kommt, wenn er erst mal in Fahrt ist. Fällt er in ein Loch hinein, taucht er am anderen wieder auf.
-
-Wenn du so gar nicht weiter weißt, kannst du auf „Help“ drücken, um dir den optimalen Pfad anzeigen zu lassen.
+Schubse den Pinguin Chilly mit den wenigsten Zügen zum Ziel. Der eisige Boden ist so schlittrig, dass Chilly nur an Hindernissen zum Halt kommt, wenn er erst mal in Fahrt ist. Fällt er in ein Loch hinein, taucht er am anderen wieder auf.
 
 ![Screenshot von Level 5](level5.png)
 
+Wenn du so gar nicht weiter weißt, kannst du auf „Help“ drücken, um dir den optimalen Pfad anzeigen zu lassen.
+
+![Screenshot von Level 5](level5help.png)
+
+
 ## Gameplay
 
-Level 5 ist ein einfacher Level. Aber wenn man einfach drauflos rutscht, statt über den idealen Weg nachzudenken, kann es schnell passieren, dass man nur zwei von drei Sternen oder weniger bekommt:
+Level 5 ist ein einfacher Level. Aber wenn man einfach drauflos rutscht, statt vorher über den idealen Weg nachzudenken, kann es schnell passieren, dass man nur zwei von drei Sternen oder weniger bekommt:
 
-![Level 5, 2 Versuche](level5.mp4)
+https://github.com/607011/glissade/assets/2240271/9e00c150-b5bb-4559-b994-e9ba596a5cce
 
 ## Editor
 
