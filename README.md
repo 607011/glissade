@@ -15,6 +15,8 @@ If you’re totally clueless about the perfect path you can press “Help” to 
 
 # Gameplay
 
+It’s easy to miss the perfect path if you don’t think ahead:
+
 https://github.com/607011/glissade/assets/2240271/9e00c150-b5bb-4559-b994-e9ba596a5cce
 
 ## Editor
