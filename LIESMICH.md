@@ -66,11 +66,11 @@ Das Spritesheet wird allerdings nicht als PNG-Datei gespeichert, sondern als [Da
 
 gensprites.py benötigt das Python-Modul „pyyaml“ zum Verarbeiten von YAML-Dateien sowie „Pillow“ zum Lesen, Bearbeiten und Schreiben von Bilddateien. Du musst die Module nicht per `pip` von Hand installieren: Wenn du das Skript mit `pipenv run ./gensprites.py` startest, werden sie vorher automatisch in ein sogenanntes [Virtualenv](https://pipenv.pypa.io/en/latest/) installiert, um das du dich nicht weiter kümmern musst.
 
-Im Verzeichnis _bin befinden sie noch zwei weitere Skripte: [convert-audio.sh](_bin/convert-audio.sh) wandelt die in src/static/sounds enthaltenen WAV-Dateien mithilfe von [FFmpeg](https://ffmpeg.org/) in die bandbreiten- und browserfreundlicheren Formate MP3, OGG und WebM um. [convert-images.sh](_bin/convert-images.sh) erzeugt Favicons aus der Pinguin-Grafik _raw/penguin.png.
+Im Verzeichnis _bin befinden sie noch zwei weitere Skripte: [convert-audio.sh](_bin/convert-audio.sh) wandelt die in src/static/sounds enthaltenen WAV-Dateien mithilfe von [FFmpeg](https://ffmpeg.org/) in die bandbreiten- und browserfreundlicheren Formate MP3, OGG und WebM um. [convert-images.sh](_bin/convert-images.sh) erzeugt mithilfe von [ImageMagick](https://imagemagick.org/)’s `convert` Favicons aus der Pinguin-Grafik _raw/penguin.png.
 
 ## Trivia
 
-Die Sounds sind mithilfe von [Bfxr](https://www.bfxr.net/) entstanden. Die Grafiken wurden liebevoll von Hand in Affinity Photo gezeichnet.
+Die Sounds sind mithilfe von [Bfxr](https://www.bfxr.net/) entstanden. Die Grafiken wurden liebevoll von Hand in [Affinity Photo](https://affinity.serif.com/de/photo/) gemalt.
 
 Chilly ist zu seinem Namen in einem gleichermaßen lustigen wie irritierenden [Gespräch mit ChatGPT](https://chat.openai.com/share/bac5dec0-1a97-4430-8714-938811e16821) gekommen, das einmal mehr zeigt, das KIs zu doof zum Zählen sind – aber auch, dass man sie bei der Ehre packen kann 😉
 
