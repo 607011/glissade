@@ -18,7 +18,7 @@ https://github.com/607011/glissade/assets/2240271/9e00c150-b5bb-4559-b994-e9ba59
 
 ## Editor
 
-Zum Spiel gehört ein Editor, mit dem du bestehende Levels verändern und neue erfinden kannst.
+Zum Spiel gehört ein Editor, mit dem du bestehende Levels verändern und neue kreieren kannst.
 
 <img width="703" alt="Editor" src="https://github.com/607011/glissade/assets/2240271/690213fc-63c9-4913-b9c2-9614f63667cf">
 
@@ -27,7 +27,7 @@ Standardmäßig legt „New game“ einen 20 Felder breiten und hohen Level an. 
 | Feldkachel  | Bedeutung |
 | - | - |
 | ![](_raw/marker.png) | Damit kannst du den Weg markieren, den Chilly nehmen soll. Die Marker sind nur eine Gedankenstütze für dich; im Spiel erscheinen sie als normale Eisfläche. |
- | ![](_raw/ice.png) | Es ist Eis, kalt und glatt. So glatt, dass ein darübergleitender Chilly erst dann stoppt, wenn er gegen einen Fels dotzt oder in ein Loch fällt. |
+ | ![](_raw/ice.png) | Das ist Eis, kalt und glatt. So glatt, dass ein darübergleitender Chilly erst dann stoppt, wenn er gegen einen Fels dotzt oder in ein Loch fällt. |
  | ![](_raw/rock.png) | Der harte Fels bremst den schlitternden Chilly abrupt auf 0 ab. |
  | ![](_raw/coin.png) | Wenn du Münzen in einen Level packst, veränderst du ihn damit komplett. Das Einsammeln einer Münze schreibt dem Spielerkonto 5 Punkte gut. |
  | ![](_raw/hole.png) | Anders als im richtigen Leben sind diese Löcher nicht lebensgefährlich. Fällt Chilly in eines hinein, taucht er am anderen sofort wieder auf. Diese Formulierung legt schon nahe, dass es nur genau zwei Löcher (oder keines) in einem Level geben darf. |
@@ -45,7 +45,7 @@ Wenn du mit deinen Levels glücklich bist, kannst du das Spiel für die Veröffe
 
 Dazu gibt es mehrere Wege. Der erste führt über den Aufruf des Skripts [_bin/pack.sh](_bin/pack.sh). Es legt das Unterverzeichnis „package“ an und kopiert alle für das Spiel benötigten Dateien dort hinein. Diese komprimiert das Skript per 7-Zip und schreibt sie in die Datei rutschpartie.zip.
 
-Diese Dateien kannst du nun auf beliebigem Weg mit anderen teilen, zum Beispiel die Zip-Datei an Freunde mailen oder den Verzeichnisinhalt über deinen Webserver veröffentlichen. Wenn du einen eigenen Webserver hast, wirst du wissen, wie man Dateien dorthin kopiert.
+Die Dateien kannst du nun auf beliebigem Weg mit anderen teilen, zum Beispiel die Zip-Datei an Freunde mailen oder den Verzeichnisinhalt über deinen Webserver veröffentlichen.
 
 Den zweiten Weg beschreitest du mit dem Skript [_bin/deploy.sh](_bin/deploy.sh). Es legt das Verzeichnis „deploy“ an, kopiert aber nicht einfach alle benötigten Dateien dorthin, sondern „minifiziert“ sie zuvor, sodass sie schneller durch die Leitung rauschen, wenn ein Browser sie vom Webserver abruft. 
 Wenn du möchtest, dass das Skript die in deploy enthaltenen Dateien per rsync auf deinen Webserver kopiert, lege eine Datei mit dem Namen .env mit einem Inhalt wie folgendem an:
