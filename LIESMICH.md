@@ -28,14 +28,14 @@ Standardmäßig legt „New game“ einen 20 Felder breiten und hohen Level an. 
 | - | - |
 | ![](_raw/marker.png) | Damit kannst du den Weg markieren, den Chilly nehmen soll. Die Marker sind nur eine Gedankenstütze für dich; im Spiel erscheinen sie als normale Eisfläche. |
  | ![](_raw/ice.png) | Es ist Eis, kalt und glatt. So glatt, dass ein darübergleitender Chilly erst dann stoppt, wenn er gegen einen Fels dotzt oder in ein Loch fällt. |
- | ![](_raw/rock.png) | Der harte Fels bremst den schlitternden Chilly abrupt ab 0 ab. |
+ | ![](_raw/rock.png) | Der harte Fels bremst den schlitternden Chilly abrupt auf 0 ab. |
  | ![](_raw/coin.png) | Wenn du Münzen in einen Level packst, veränderst du ihn damit komplett. Das Einsammeln einer Münze schreibt dem Spielerkonto 5 Punkte gut. |
  | ![](_raw/hole.png) | Anders als im richtigen Leben sind diese Löcher nicht lebensgefährlich. Fällt Chilly in eines hinein, taucht er am anderen sofort wieder auf. Diese Formulierung legt schon nahe, dass es nur genau zwei Löcher (oder keines) in einem Level geben darf. |
 | ![](_raw/exit.png) | Der Ausgang. Hierhin muss Chilly manövriert werden. |
 | ![](_raw/penguin.png) | Der mutige Chilly. Es kann nur einen geben – pro Level. |
 | ![](_raw/empty.png) | Das leere Feld kannst du vorerst ignorieren. |
 
-Die drei Eingabefelder unterhalb der „Thresholds“-Schaltfläche enthalten die Anzahl der Züge, die der Spieler maximal benötigen darf, um drei, zwei oder einen Stern am Level-Ende zu erhalten. Das Feld „Points to earn“ gibt an, wie viel Punkte das Absolvieren des Levels dem Spieler einbringt. Diese Zahl wird mit der Anzahl erhaltener Sterne für den endgültigen Level-Score multipliziert. Der in den Editor eingebaute Solver füllt diese drei automatisch mit sinnvollen Werten. Du kannst sie beliebig ändern, bevor du den fertigen Levels ins Spiel integrierst.
+Die drei Eingabefelder unterhalb der „Thresholds“-Schaltfläche enthalten die Anzahl der Züge, die der Spieler maximal benötigen darf, um drei, zwei oder einen Stern am Level-Ende zu erhalten. Das Feld „Points to earn“ gibt an, wie viel Punkte das Absolvieren des Levels dem Spieler einbringt. Diese Zahl wird mit der Anzahl erhaltener Sterne für den endgültigen Level-Score multipliziert. Der in den Editor eingebaute Solver füllt diese drei automatisch mit sinnvollen Werten. Du kannst sie beliebig ändern, bevor du den fertigen Level ins Spiel integrierst.
 
 Um einen Level ins Spiel einzubauen, bedarf es zweier Schritte: Zuerst musst du die Level-Daten per „Copy JSON data to clipboard” in die Zwischenablage kopieren. Von dort aus kannst du sie an der gewünschten Stelle unterhalb von `<script id="levels" type="application/json">` in der Datei [index.html](src/index.html) einfügen.
 
@@ -62,7 +62,7 @@ Die im Folgenden beschriebenen Skripte brauchst du nicht zum Veröffentlichen, s
 
 Das Python-Skript [gensprites.py](gensprites.py) verfrachtet alle für das Spiel benötigten Grafiken in ein sogenanntes [Spritesheet](https://en.wikipedia.org/wiki/Texture_atlas). Spritesheets können die Ladezeiten drastisch verkürzen, weil nicht mehr viele kleine Bilder einzeln geladen werden müssen, sondern nur eines, das wie eine Wand aus Kacheln alle Bilder enthält. Welche Grafiken im Spritesheet landen sollen, steht in der Datei sprites.yaml.
 
-Das Spritesheet wird allerdings nicht als PNG-Datei gespeichert, sondern als [Daten-URL](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/Data_URLs) in der [CSS](https://developer.mozilla.org/en-US/docs/Web/CSS)-Datei [tiles.css](src/tiles.css). Darin landen auch die CSS-Klassen, über die man die Einzelbilder im HTML-Code referenzieren kann. Sie sind nach den ursprünglichen Bilddateien benannt: Ist in sprites.yaml beispielsweise die Datei „penguin.png“ aufgeführt, entsteht in tiles.css dafür ein Eintrag wie `.penguin{background-position:0 -416px}`. Die tatsächliche `background-position` hängt davon ab, welche anderen Bilder sprites.yaml noch enthält.
+Das Spritesheet wird allerdings nicht als PNG-Datei gespeichert, sondern als [Daten-URL](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/Data_URLs) in die [CSS](https://developer.mozilla.org/en-US/docs/Web/CSS)-Datei [tiles.css](src/tiles.css) eingebettet. Darin landen auch die CSS-Klassen, über die der HTML-Code die Einzelbilder referenziert. Sie sind nach den ursprünglichen Bilddateien benannt: Ist in sprites.yaml beispielsweise die Datei „penguin.png“ aufgeführt, entsteht in tiles.css dafür ein Eintrag wie `.penguin{background-position:0 -416px}`. Die tatsächliche `background-position` hängt davon ab, welche anderen Bilder sprites.yaml noch enthält.
 
 gensprites.py benötigt das Python-Modul „pyyaml“ zum Verarbeiten von YAML-Dateien sowie „Pillow“ zum Lesen, Bearbeiten und Schreiben von Bilddateien. Du musst die Module nicht per `pip` von Hand installieren: Wenn du das Skript mit `pipenv run ./gensprites.py` startest, werden sie vorher automatisch in ein sogenanntes [Virtualenv](https://pipenv.pypa.io/en/latest/) installiert, um das du dich nicht weiter kümmern musst.
 
