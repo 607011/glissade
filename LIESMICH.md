@@ -48,16 +48,31 @@ Dazu gibt es mehrere Wege. Der erste führt über den Aufruf des Skripts [_bin/p
 Diese Dateien kannst du nun auf beliebigem Weg mit anderen teilen, zum Beispiel die Zip-Datei an Freunde mailen oder den Verzeichnisinhalt über deinen Webserver veröffentlichen. Wenn du einen eigenen Webserver hast, wirst du wissen, wie man Dateien dorthin kopiert.
 
 Den zweiten Weg beschreitest du mit dem Skript [_bin/deploy.sh](_bin/deploy.sh). Es legt das Verzeichnis „deploy“ an, kopiert aber nicht einfach alle benötigten Dateien dorthin, sondern „minifiziert“ sie zuvor, sodass sie schneller durch die Leitung rauschen, wenn ein Browser sie vom Webserver abruft. 
+Wenn du möchtest, dass das Skript die in deploy enthaltenen Dateien per rsync auf deinen Webserver kopiert, lege eine Datei mit dem Namen .env mit einem Inhalt wie folgendem an:
+
+```bash
+REMOTE=your.server.example.org:/var/www/html/rutschpartie
+```
+
+Damit kopiert das Skript die Dateien auf den Server mit dem Domain-Namen your.server.example.org in das dortige Verzeichnis /var/www/html/rutschpartie. Das Verzeichnis muss bereits existieren.
 
 ## Weitere Skripte
 
+Die im Folgenden beschriebenen Skripte brauchst du nicht zum Veröffentlichen, sondern nur, wenn du Grafiken und Sounds verändern möchtest.
+
 Das Python-Skript [gensprites.py](gensprites.py) verfrachtet alle für das Spiel benötigten Grafiken in ein sogenanntes [Spritesheet](https://en.wikipedia.org/wiki/Texture_atlas). Spritesheets können die Ladezeiten drastisch verkürzen, weil nicht mehr viele kleine Bilder einzeln geladen werden müssen, sondern nur eines, das wie eine Wand aus Kacheln alle Bilder enthält. Welche Grafiken im Spritesheet landen sollen, steht in der Datei sprites.yaml.
 
-Das Spritesheet wird allerdings nicht als PNG-Datei gespeichert, sondern als Daten-URL in einer CSS-Datei (siehe [tiles.css](src/tiles.css)). Darin landen auch die CSS-Klassen, über die man die Einzelbilder referenzieren kann. Sie heißen so wie die ursprünglichen Bilddateien. Zum Beispiel: Ist in sprites.yaml die Datei „penguin.png“ aufgeführt, entsteht in tiles.css dafür ein Eintrag wie `.penguin{background-position:0 -416px}`. Die tatsächliche `background-position` hängt davon ab, welchen anderen Bilder sprites.yaml noch enthält.
+Das Spritesheet wird allerdings nicht als PNG-Datei gespeichert, sondern als [Daten-URL](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/Data_URLs) in der [CSS](https://developer.mozilla.org/en-US/docs/Web/CSS)-Datei [tiles.css](src/tiles.css). Darin landen auch die CSS-Klassen, über die man die Einzelbilder im HTML-Code referenzieren kann. Sie sind nach den ursprünglichen Bilddateien benannt: Ist in sprites.yaml beispielsweise die Datei „penguin.png“ aufgeführt, entsteht in tiles.css dafür ein Eintrag wie `.penguin{background-position:0 -416px}`. Die tatsächliche `background-position` hängt davon ab, welche anderen Bilder sprites.yaml noch enthält.
+
+gensprites.py benötigt das Python-Modul „pyyaml“ zum Verarbeiten von YAML-Dateien sowie „Pillow“ zum Lesen, Bearbeiten und Schreiben von Bilddateien. Du musst die Module nicht per `pip` von Hand installieren: Wenn du das Skript mit `pipenv run ./gensprites.py` startest, werden sie vorher automatisch in ein sogenanntes [Virtualenv](https://pipenv.pypa.io/en/latest/) installiert, um das du dich nicht weiter kümmern musst.
+
+Im Verzeichnis _bin befinden sie noch zwei weitere Skripte: [convert-audio.sh](_bin/convert-audio.sh) wandelt die in src/static/sounds enthaltenen WAV-Dateien mithilfe von [FFmpeg](https://ffmpeg.org/) in die bandbreiten- und browserfreundlicheren Formate MP3, OGG und WebM um. [convert-images.sh](_bin/convert-images.sh) erzeugt Favicons aus der Pinguin-Grafik _raw/penguin.png.
 
 ## Trivia
 
-Wie Chilly zu seinem Namen gekommen ist: [das Gespräch mit ChatGPT](https://chat.openai.com/share/bac5dec0-1a97-4430-8714-938811e16821).
+Die Sounds sind mithilfe von [Bfxr](https://www.bfxr.net/) entstanden. Die Grafiken wurden liebevoll von Hand in Affinity Photo gezeichnet.
+
+Chilly ist zu seinem Namen in einem gleichermaßen lustigen wie irritierenden [Gespräch mit ChatGPT](https://chat.openai.com/share/bac5dec0-1a97-4430-8714-938811e16821) gekommen, das einmal mehr zeigt, das KIs zu doof zum Zählen sind – aber auch, dass man sie bei der Ehre packen kann 😉
 
 ## Lizenz
 
@@ -75,3 +90,4 @@ Diese Software wurde zu Lehr- und Demonstrationszwecken geschaffen und ist nicht
 
  - Oliver Lau, Rettet den Pinguin!, [c’t 19/2023, S. 56](https://www.heise.de/select/ct/2023/19/2318608564017863443)
  - Oliver Lau, Dreifache Chance, [c’t 21/2023, S. 54](https://www.heise.de/select/ct/2023/21/2319407263017212334)
+ - Oliver Lau,  Gut gebettet, Mit Daten-URLs Bilder und andere Daten in Textdokumente integrieren, [c’t 10/2023, S. 152](https://www.heise.de/select/ct/2023/10/2307509274576696945)
