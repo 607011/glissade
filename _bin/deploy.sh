@@ -1,12 +1,18 @@
 #!/bin/bash
 
-source .env
+if [ -e .env ]; then
+    source .env
+fi
 
 mkdir -p deploy
 
-convert _raw/penguin-16x16.png -define png:compression-filter=4 -define png:compression-level=9 -define png:compression-strategy=4 src/static/images/favicon.png
+if [ ! -e src/static/images/favicon.png ]; then
+    convert _raw/penguin-16x16.png -define png:compression-filter=4 -define png:compression-level=9 -define png:compression-strategy=4 src/static/images/favicon.png
+fi
 
-convert -resize x16 -gravity center -crop 16x16+0+0 _raw/penguin-16x16.png -transparent white -colors 256 src/favicon.ico 
+if [ ! -e src/favicon.ico ]; then
+    convert -resize x16 -gravity center -crop 16x16+0+0 _raw/penguin-16x16.png -transparent white -colors 256 src/favicon.ico 
+fi
 
 rsync -rav --exclude=*.wav --exclude=.DS_Store --delete src/static deploy
 
