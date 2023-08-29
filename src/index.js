@@ -1327,8 +1327,9 @@
         el.chooseLevel.addEventListener('click', showSettingsScreen);
         el.loudspeaker = document.querySelector('#loudspeaker');
         el.loudspeaker.addEventListener('click', checkAudio);
-        el.findRouteButton = document.querySelector('#find-route');
-        el.findRouteButton.addEventListener('click', findRoute);
+        // el.findRouteButton = document.querySelector('#find-route');
+        // el.findRouteButton.addEventListener('click', findRoute);
+        document.querySelector('#find-route').remove();
         el.helpButton = document.querySelector('#help');
         el.helpButton.addEventListener('click', help);
         // el.bfsButton = document.querySelector('#bfs');
