@@ -50,18 +50,11 @@ Diese Dateien kannst du nun auf beliebigem Weg mit anderen teilen, zum Beispiel 
 
 Den zweiten Weg beschreitest du mit dem Skript [_bin/deploy.sh](_bin/deploy.sh). Es legt das Verzeichnis „deploy“ an, kopiert aber nicht einfach alle benötigten Dateien dorthin, sondern „minifiziert“ sie zuvor, sodass sie schneller durch die Leitung rauschen, wenn ein Browser sie vom Webserver abruft. 
 
+## Weitere Skripte
 
+Das Python-Skript [gensprites.py](gensprites.py) verfrachtet alle für das Spiel benötigten Grafiken in ein sogenanntes [Spritesheet](https://en.wikipedia.org/wiki/Texture_atlas). Spritesheets können die Ladezeiten drastisch verkürzen, weil nicht mehr viele kleine Bilder einzeln geladen werden müssen, sondern nur eines, dass wie eine Wand aus Kacheln alle Bilder enthält. Welche Grafiken im Spritesheet landen sollen, steht in der Datei sprites.yaml.
 
-
-
-
-
-
-
-
-
-
-
+Das Spritesheet wird allerdings nicht als PNG-Datei gespeichert, sondern als Daten-URL in einer CSS-Datei (siehe [tiles.css](src/tiles.css)).
 
 ## Trivia
 
