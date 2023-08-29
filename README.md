@@ -6,7 +6,7 @@
 
 Push Chilly, the penguin, through his icy maze to guide him to the exit using the path with the fewest moves. The ground is so slippery that he can only stop at obstacles. If he falls down one hole, he reappears at the other. 
 
-![Lavel 5](level5.png)
+![Level 5](level5.png)
 
 If you’re totally clueless about the perfect path press “Help” display directional arrows
 
@@ -18,8 +18,8 @@ The game comes with an editor that you can use to edit existing levels or create
 
 By default, a »New game« will be 20 fields wide and 20 fields high. You can change the dimensions in the two input fields below the button.
 
-| Field  | Meaning |
-| - | - |
+| Field  | Meaning                                       |
+| ------ | --------------------------------------------- |
 | ![](_raw/marker.png) | Use it to sprinkle breadcrumbs as a reminder for yourself which path Chilly is supposed to take. The will display as regular Ice fields in the game. |
  | ![](_raw/ice.png) | Ice, ice, baby! It's so slippery that once the player pushes Chilly he will not stop before he hits a rock or falls down a hole. |
  | ![](_raw/rock.png) | The rock is hard as rock. It will abruptly stop the penguin’s motion. |
