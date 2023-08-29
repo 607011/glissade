@@ -13,7 +13,7 @@ Wenn du so gar nicht weiter weißt, kannst du auf „Help“ drücken, um dir de
 
 ## Gameplay
 
-Level 5 ist ein einfacher Level. Aber wenn man einfach drauflos rutscht, statt vorher über den idealen Weg nachzudenken, kann es schnell passieren, dass man nur zwei von drei Sternen oder weniger bekommt:
+Level 5 zum Beispiel ist ein einfacher Level. Aber wenn du einfach drauflos rutschst, statt vorher über den idealen Weg nachzudenken, kann es schnell passieren, dass du nur zwei von drei Sternen einheimst:
 
 https://github.com/607011/glissade/assets/2240271/9e00c150-b5bb-4559-b994-e9ba596a5cce
 
@@ -38,7 +38,7 @@ Standardmäßig legt „New game“ einen 20 Felder breiten und hohen Level an. 
 
 Die drei Eingabefelder unterhalb der „Thresholds“-Schaltfläche enthalten die Anzahl der Züge, die der Spieler maximal benötigen darf, um drei, zwei oder einen Stern am Level-Ende zu erhalten. Das Feld „Points to earn“ gibt an, wie viel Punkte das Absolvieren des Levels dem Spieler einbringt. Diese Zahl wird mit der Anzahl erhaltener Stern für den endgültigen Level-Score multipliziert. Der in den Editor eingebaute Solver füllt diese drei automatisch mit sinnvollen Werten. Du kannst sie beliebig ändern, bevor du den fertigen Levels in Spiel integrierst.
 
-Um einen Level ins Spiel einzubauen, bedarf es zweier Schritte: Zuerst musst du die Level-Daten per „Copy JSON data to clipboard” in die Zwischenablage kopieren. Von dort aus kannst du sie an der gewünschten Stelle im Array `LEVELS` (siehe [index.js](src/index.js)) einfügen.
+Um einen Level ins Spiel einzubauen, bedarf es zweier Schritte: Zuerst musst du die Level-Daten per „Copy JSON data to clipboard” in die Zwischenablage kopieren. Von dort aus kannst du sie an der gewünschten Stelle unterhalb von `<script id="levels" type="application/json">` in der Datei [index.html](src/index.html) einfügen.
 
 ## Veröffentlichen
 
@@ -54,7 +54,9 @@ Den zweiten Weg beschreitest du mit dem Skript [_bin/deploy.sh](_bin/deploy.sh).
 
 Das Python-Skript [gensprites.py](gensprites.py) verfrachtet alle für das Spiel benötigten Grafiken in ein sogenanntes [Spritesheet](https://en.wikipedia.org/wiki/Texture_atlas). Spritesheets können die Ladezeiten drastisch verkürzen, weil nicht mehr viele kleine Bilder einzeln geladen werden müssen, sondern nur eines, dass wie eine Wand aus Kacheln alle Bilder enthält. Welche Grafiken im Spritesheet landen sollen, steht in der Datei sprites.yaml.
 
-Das Spritesheet wird allerdings nicht als PNG-Datei gespeichert, sondern als Daten-URL in einer CSS-Datei (siehe [tiles.css](src/tiles.css)).
+Das Spritesheet wird allerdings nicht als PNG-Datei gespeichert, sondern als Daten-URL in einer CSS-Datei (siehe [tiles.css](src/tiles.css)). Darin landen auch die CSS-Klassen, über die man die Einzelbilder referenzieren kann. Sie heißen so wie die ursprünglichen Bilddateien. Zum Beispiel: Ist in sprites.yaml die Datei „penguin.png“ aufgeführt, entsteht in tiles.css dafür ein Eintrag wie `.penguin{background-position:0 -416px}`. Die tatsächliche `background-position` hängt davon ab, welchen anderen Bilder sprites.yaml noch enthält.
+
+
 
 ## Trivia
 
