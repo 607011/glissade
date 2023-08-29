@@ -8,7 +8,9 @@ Push Chilly, the penguin, through his icy maze to guide him to the exit using th
 
 ![Level 5](level5.png)
 
-If you’re totally clueless about the perfect path press “Help” display directional arrows
+If you’re totally clueless about the perfect path you can press “Help” to display directional arrows that lead to the exit.
+
+![Level 5](level5help.png)
 
 ## Editor
 
@@ -34,7 +36,7 @@ The input fields below “Thresholds” hold the maximum number of moves allowed
 To embed the level into the game, press the “Copy JSON data to clipboard” button to copy the level data to the clipboard. Now you can insert the level data at the desired location in the `LEVELS` array in [index.js](src/index.js).
 
 
-## Deployment
 
-Once you’re happy with all of your levels you can publish the game to a web server of your choice. The simplest way to do this, is to execute the script [deploy.sh](_bin/deploy.sh).
+## License
 
+See [LICENSE](LICENSE).
