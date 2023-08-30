@@ -38,6 +38,7 @@
     };
     let level = {
         origData: [],
+        connections: [],
         data: [],
         score: 0,
         width: 0,
@@ -137,8 +138,10 @@
     }
 
     async function help() {
-        const solver = new ChillySolver([...level.origData]);
-
+        const solver = new ChillySolver({
+            data: level.origData,
+            connections: level.connections,
+        });
         let [node, iterations] = await solver.shortestPath();
         console.debug(`iterations = ${iterations}`);
         console.debug(`nodes = ${solver.nodeCount}`);
@@ -176,6 +179,7 @@
     }
 
     function scrollIntoView() {
+        // XXX: good idea, but doesn't work :-/
         player.el.scrollIntoView();
     }
 
@@ -187,7 +191,7 @@
 
     function teleport() {
         sounds.teleport.play();
-        const otherHole = holes.filter(v => v.x !== player.x || v.y !== player.y)[0];
+        const otherHole = level.connections.find(conn => conn.src.x === player.x && conn.src.y === player.y).dst;
         placePlayerAt(otherHole.x, otherHole.y);
         scrollIntoView();
         standUpright();
@@ -549,10 +553,18 @@
     }
 
     function setLevel(levelData) {
-        level.data = [...levelData];
-        level.origData = [...levelData];
+        console.debug(levelData);
+        level.data = [...levelData.data];
+        level.connections = levelData.connections;
+        level.origData = [...levelData.data];
         level.width = level.data[0].length;
         level.height = level.data.length;
+        if (level.connections instanceof Array) {
+            for (const conn of level.connections) {
+                console.assert(level.cellAt(conn.src.x, conn.src.y) === Tile.Hole);
+                console.assert(level.cellAt(conn.dst.x, conn.dst.y) === Tile.Hole);
+            }
+        }
         el.levelNum.textContent = `Level ${level.currentIdx + 1}`;
         player.moves = [];
         player.distance = 0;
@@ -661,7 +673,7 @@
         level.score = 0;
         el.levelScore.textContent = '0';
         el.totalScore.textContent = player.score;
-        let levelData = LEVELS[level.currentIdx].data;
+        let levelData = LEVELS[level.currentIdx];
         el.path.textContent = '';
         if (window.location.hash) {
             const hash = window.location.hash.substring(1);

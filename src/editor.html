@@ -20,23 +20,43 @@
             font-family: Arial, Helvetica, sans-serif;
         }
 
+        #game-container {
+            position: relative;
+            cursor: pointer;
+        }
+
         #game {
             position: relative;
             margin: 10px;
             width: fit-content;
             background-color: #B0E8F8;
+            top: 0;
+            left: 0;
         }
 
         #scene {
+            position: relative;
             display: grid;
+            top: 0;
+            left: 0;
+        }
+
+        #hole-connections {
+            position: absolute;
+            top: 0;
+            left: 10px;
+            pointer-events: none;
+            z-index: 2000;
+        }
+
+        #path {
+            position: relative;
+            left: 10px;
         }
 
         #editor {
             margin: 10px;
             width: fit-content;
-        }
-
-        #editor {
             display: flex;
             flex-direction: row;
             flex-wrap: wrap;
@@ -87,9 +107,9 @@
             width: 4em;
         }
 
-        #output {
+        /* #output {
             font-family: 'Courier New', Courier, monospace;
-        }
+        } */
 
         button {
             border: 1px solid black;
@@ -158,12 +178,14 @@
                     </label>
                 </form>
             </div>
-            <div id="game"></div>
+            <div id="game-container">
+                <div id="game"></div>
+                <div id="hole-connections"></div>
+            </div>
             <div id="path"></div>
         </div>
         <div id="sidebar">
             <span><a href="index.html" target="_blank" id="play">▶️ Play game in new window</a></span>
-            <textarea id="output" placeholder="Paste level data here ..."></textarea>
             <div>
                 <button id="clear">New game</button>
                 <div style="margin-top: 10px;">
@@ -172,7 +194,6 @@
                     <input type="number" title="height" name="chosen-height" size="4" min="5" value="20">
                 </div>
             </div>
-            <button id="solve">Solve</button>
             <div>
                 <div>Thresholds</div>
                 <div>

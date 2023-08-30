@@ -230,7 +230,7 @@ class ChillySolver {
     #levelData;
     #levelWidth;
     #levelHeight;
-    #holes;
+    #connections;
     #collectibles;
     #rootNode;
     #nodeCache;
@@ -240,11 +240,11 @@ class ChillySolver {
     /**
      * @param {Array} levelData
      */
-    constructor(levelData) {
-        this.#levelData = levelData;
+    constructor(level) {
+        this.#connections = level.connections;
+        this.#levelData = [...level.data];
         this.#levelHeight = this.#levelData.length;
         this.#levelWidth = this.#levelData[0].length;
-        this.#holes = [];
         this.#collectibles = [];
         this.#rootNode = null;
         this.#nodeCache = {};
@@ -257,10 +257,6 @@ class ChillySolver {
                     case Tile.Player:
                         this.#levelData[y] = row.replace(Tile.Player, Tile.Ice);
                         this.#rootNode = new GraphNode(Tile.Player, x, y, true);
-                        break;
-                    case Tile.Hole:
-                        // TODO: check for more than two holes
-                        this.#holes.push({ x, y });
                         break;
                     case Tile.Coin:
                     // fall-through
@@ -359,6 +355,14 @@ class ChillySolver {
         return edge;
     }
 
+    #norm_x(x) {
+        return (x + this.#levelWidth) % this.#levelWidth;
+    }
+
+    #norm_y(y) {
+        return (y + this.#levelHeight) % this.#levelHeight;
+    }
+
     /**
      * 
      * @param {GraphNode} source 
@@ -396,7 +400,7 @@ class ChillySolver {
                     node = this.#getCachedNode(Tile.Exit, x + dx, y + dy);
                     break;
                 case Tile.Hole:
-                    const otherHole = this.#holes.filter(v => v.x !== (x + dx) || v.y !== (y + dy))[0];
+                    const otherHole = this.#connections.find(conn => conn.src.x === this.#norm_x(x + dx) && conn.src.y === this.#norm_y(y + dy)).dst;
                     node = this.#getCachedNode(Tile.Hole, otherHole.x, otherHole.y, false);
                     break;
                 default:
@@ -452,8 +456,8 @@ class ChillySolver {
                     node = this.#getCachedNode(Tile.Exit, x + dx, y + dy);
                     break;
                 case Tile.Hole:
-                    const otherHole = this.#holes.filter(v => v.x !== (x + dx) || v.y !== (y + dy))[0];
-                    node = this.#getCachedNode(Tile.Hole, otherHole.x, otherHole.y, false);
+                    const otherHole = this.#connections.find(conn => conn.src.x === (x + dx) && conn.src.y === (y + dy));
+                    node = this.#getCachedNode(Tile.Hole, otherHole.dst.x, otherHole.dst.y, false);
                     break;
                 default:
                     if (x !== source.x || y !== source.y) {
