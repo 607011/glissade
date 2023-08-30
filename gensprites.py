@@ -51,7 +51,7 @@ def main():
     position: relative;
     top: 0;
     left: 0;
-    cursor: pointer;
+    cursor: inherit;
     box-sizing: content-box;
     background-size: cover;
     background-repeat: no-repeat;
