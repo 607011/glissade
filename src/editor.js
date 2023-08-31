@@ -30,8 +30,9 @@
     const STORAGE_KEY_LEVEL = 'rutschpartie.level';
     const STORAGE_KEY_WIDTH = 'rutschpartie.width';
     const STORAGE_KEY_HEIGHT = 'rutschpartie.height';
+    const STORAGE_KEY_ITEM = 'rutschpartie.item';
     const el = {};
-    let selectedItem = 'rock';
+    let selectedItem = localStorage.getItem(STORAGE_KEY_ITEM) || 'rock';
     let state = State.Default;
     let undoHistory = new UndoHistory;
     let level = {
@@ -42,14 +43,35 @@
     let height;
     let hole1;
     let connectionLine;
+    let selectedConnectionLine = null;
+    function upscaled(coord) {
+        return (coord | 0) * Tile.Size + Tile.Size / 2;
+    }
+    function setSelectedItem(item) {
+        selectedItem = item;
+        localStorage.setItem(STORAGE_KEY_ITEM, item);
+    }
     async function solve() {
         const solver = new ChillySolver({
             data: level.data,
             connections: level.connectionData()
         });
-        let [node, iterations] = await solver.shortestPath();
+        let solverResult;
+        el.message.textContent = '';
+        try {
+            solverResult = await solver.shortestPath();
+        }
+        catch (e) {
+            el.message.textContent = e.message;
+        }
+        if (!solverResult) {
+            el.message.textContent = '<unsolvable>';
+            el.path.textContent = '';
+            return;
+        }
+        let [node, iterations] = solverResult;
         if (node === null) {
-            document.querySelector('#path').textContent = '<no solution>';
+            el.path.textContent = '<no solution>';
             return;
         }
         let path = [node];
@@ -70,42 +92,70 @@
             x = node.x;
             y = node.y;
         }
-        document.querySelector('#path').textContent = `${moves.length}: ${moves.join(' ')} (${iterations} iterations)`;
+        el.path.textContent = `${moves.length}: ${moves.join('')} (${iterations} iterations)`;
         el.points.value = Math.round(iterations / 10);
         el.threshold1.value = moves.length;
         el.threshold2.value = moves.length + 1;
         el.threshold3.value = Math.round(moves.length * 1.4);
     }
+    function updateAll() {
+        solve().then(() => {
+            saveLevel();
+            updatePlayButton();
+            removeHash();
+        });
+    }
     function undo() {
         undoHistory.undo();
+    }
+    function collectedLevelData() {
+        return {
+            data: level.data,
+            connections: level.connectionData(),
+            name: document.querySelector('[name="levelName"]').value,
+        };
     }
     function saveLevel(rows) {
         if (rows instanceof Array) {
             level.data = rows;
         }
-        localStorage.setItem(STORAGE_KEY_LEVEL, JSON.stringify({
-            data: level.data,
-            connections: level.connectionData(),
-        }));
+        localStorage.setItem(STORAGE_KEY_LEVEL, JSON.stringify(collectedLevelData()));
     }
     function updatePlayButton() {
-        let playableLevel = {
-            connections: level.connectionData(),
-            data: level.data.map(row => row.replaceAll(Tile.Marker, Tile.Ice)),
-        };
-        el.playButton.href = `index.html#level=${btoa(JSON.stringify(playableLevel))}`;
+        el.playButton.href = `index.html#level=${btoa(JSON.stringify(collectedLevelData()))}`;
     }
-    function createConnectionLine(x1, y1, x2, y2) {
+    function createConnectionLine(src, dst, addListeners = false) {
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('class', 'connection');
         line.setAttribute('fill', 'none');
         line.setAttribute('stroke', 'red');
         line.setAttribute('stroke-width', '3');
-        line.setAttribute('x1', x1);
-        line.setAttribute('y1', y1);
-        line.setAttribute('x2', x2);
-        line.setAttribute('y2', y2);
+        line.setAttribute('data-x1', src.x);
+        line.setAttribute('data-y1', src.y);
+        line.setAttribute('data-x2', dst.x);
+        line.setAttribute('data-y2', dst.y);
+        line.setAttribute('x1', upscaled(src.x));
+        line.setAttribute('y1', upscaled(src.y));
+        line.setAttribute('x2', upscaled(dst.x));
+        line.setAttribute('y2', upscaled(dst.y));
         line.setAttribute('marker-end', 'url(#endarrow)');
+        if (addListeners) {
+            addConnectionLineListeners(line);
+        }
         return line;
+    }
+    function addConnectionLineListeners(line) {
+        line.addEventListener('mouseout', _e => {
+            selectedConnectionLine.classList.remove('hover');
+            selectedConnectionLine = null;
+        });
+        line.addEventListener('mouseover', e => {
+            selectedConnectionLine = e.target;
+            selectedConnectionLine.classList.add('hover');
+        });
+        line.addEventListener('click', e => {
+            console.debug(e.target);
+        });
     }
     function evaluateTiles() {
         let x = 0;
@@ -211,17 +261,14 @@
         if (!level.connections) {
             level.connections = [];
         }
+        document.querySelector('[name="levelName"]').value = level.name;
         if (level.connections instanceof Array) {
             for (const conn of level.connections) {
                 const x1 = parseInt(conn.src.x);
                 const y1 = parseInt(conn.src.y);
                 const x2 = parseInt(conn.dst.x);
                 const y2 = parseInt(conn.dst.y);
-                const line = createConnectionLine(
-                    x1 * Tile.Size + Tile.Size / 2,
-                    y1 * Tile.Size + Tile.Size / 2,
-                    x2 * Tile.Size + Tile.Size / 2,
-                    y2 * Tile.Size + Tile.Size / 2);
+                const line = createConnectionLine({ x: x1, y: y1 }, { x: x2, y: y2 }, true);
                 connections.push({
                     src: el.scene.querySelector(`[data-coord="${x1}-${y1}"]`),
                     dst: el.scene.querySelector(`[data-coord="${x2}-${y2}"]`),
@@ -232,6 +279,37 @@
             level.connections = connections;
         }
         el.game.replaceChildren(el.scene);
+    }
+    function copyToClipboard() {
+        const levelData = {
+            thresholds: [
+                parseInt(el.threshold1.value),
+                parseInt(el.threshold2.value),
+                parseInt(el.threshold3.value),
+            ],
+            basePoints: parseInt(el.points.value),
+            name: document.querySelector('[name="levelName"]').value,
+            data: level.data,
+            connections: level.connectionData(),
+        };
+        navigator.clipboard.writeText(JSON.stringify(levelData, null, 2)).then(
+            () => { },
+            () => {
+                alert('Copy failed.');
+            }
+        );
+    }
+    function clearLevel() {
+        if (confirm('Do you really want to discard your work and begin from scratch?')) {
+            for (const conn of level.connections) {
+                conn.line.remove();
+            }
+            level.data = generateEmptyLevel(parseInt(el.width.value), parseInt(el.height.value));
+            level.connections = [];
+            build();
+            evaluateTiles();
+            updateAll();
+        }
     }
     function removeHash() {
         if (window.history.pushState) {
@@ -279,25 +357,37 @@
                 break;
         }
         if (newSelectedItem !== selectedItem) {
-            selectedItem = newSelectedItem;
-            document.itemForm.item.value = selectedItem;
+            setSelectedItem(newSelectedItem);
+            document.itemForm.item.value = newSelectedItem;
             e.preventDefault();
         }
     }
     function onKeyDown(e) {
         if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
             undo();
-            solve();
+            updateAll();
             return;
         }
     }
     function onKeyUp(e) {
         switch (e.key) {
+            case 'Delete':
+            // fall-through
+            case 'Backspace':
+                if (selectedConnectionLine !== null) {
+                    level.connections = level.connections.filter(conn => conn.line !== selectedConnectionLine);
+                    selectedConnectionLine.remove();
+                    selectedConnectionLine = null;
+                    updateAll();
+                    // TODO: enable undo for this action
+                }
+                break;
             case 'Escape':
                 if (state === State.Connecting) {
                     state = State.Default;
                     connectionLine.remove();
                     connectionLine = null;
+                    el.gameContainer.style.setProperty('cursor', 'pointer');
                 }
                 break;
         }
@@ -307,19 +397,20 @@
             case State.Connecting:
                 if (e.target.classList.contains('hole') && hole1 !== e.target) {
                     el.gameContainer.style.setProperty('cursor', 'pointer');
-                    connectionLine.setAttribute('x2', parseInt(e.target.getAttribute('data-x')) * Tile.Size + Tile.Size / 2);
-                    connectionLine.setAttribute('y2', parseInt(e.target.getAttribute('data-y')) * Tile.Size + Tile.Size / 2);
+                    connectionLine.setAttribute('x2', upscaled(e.target.getAttribute('data-x')));
+                    connectionLine.setAttribute('y2', upscaled(e.target.getAttribute('data-y')));
+                    addConnectionLineListeners(connectionLine);
                     level.connections.push({
                         src: hole1,
                         dst: e.target,
                         line: connectionLine,
                     });
-                    saveLevel();
                     undoHistory.add(new Undoable(function undoConnection() {
                         level.connections.pop().line.remove();
-                        saveLevel();
+                        updateAll();
                     }));
                     state = State.Default;
+                    updateAll();
                     e.stopImmediatePropagation();
                     return e.preventDefault();
                 }
@@ -332,9 +423,11 @@
                     }
                     state = State.Connecting;
                     hole1 = e.target;
-                    const x = Tile.Size * parseInt(hole1.getAttribute('data-x'));
-                    const y = Tile.Size * parseInt(hole1.getAttribute('data-y'));
-                    connectionLine = createConnectionLine(x + Tile.Size / 2, y + Tile.Size / 2, x + e.layerX, y + e.layerY)
+                    const x = parseInt(hole1.getAttribute('data-x'));
+                    const y = parseInt(hole1.getAttribute('data-y'));
+                    connectionLine = createConnectionLine({ x, y }, { x, y });
+                    connectionLine.setAttribute('x2', x * Tile.Size + e.layerX);
+                    connectionLine.setAttribute('y2', y * Tile.Size + e.layerY);
                     el.connections.appendChild(connectionLine);
                     el.gameContainer.style.setProperty('cursor', 'not-allowed');
                 }
@@ -351,8 +444,8 @@
                 else {
                     el.gameContainer.style.setProperty('cursor', 'not-allowed');
                 }
-                connectionLine.setAttribute('x2', parseInt(e.target.getAttribute('data-x')) * Tile.Size + Tile.Size / 2);
-                connectionLine.setAttribute('y2', parseInt(e.target.getAttribute('data-y')) * Tile.Size + Tile.Size / 2);
+                connectionLine.setAttribute('x2', upscaled(e.target.getAttribute('data-x')));
+                connectionLine.setAttribute('y2', upscaled(e.target.getAttribute('data-y')));
                 break;
             default:
                 break;
@@ -373,13 +466,11 @@
             undoHistory.add(new Undoable(function undoTileClick() {
                 e.target.className = beforeClassName;
                 evaluateTiles();
-                updatePlayButton();
+                updateAll();
             }));
             evaluateTiles();
-            updatePlayButton();
+            updateAll();
         }
-        removeHash();
-        solve();
     }
     function onTileEntered(e) {
         if (e.buttons === 1) {
@@ -434,8 +525,7 @@
         });
         build();
         evaluateTiles();
-        updatePlayButton();
-        solve();
+        updateAll();
     }
     function generateEmptyLevel(w, h) {
         return []
@@ -450,28 +540,19 @@
         el.threshold1 = document.querySelector('[name="threshold1"]');
         el.threshold2 = document.querySelector('[name="threshold2"]');
         el.threshold3 = document.querySelector('[name="threshold3"]');
-        el.connections = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        el.connections.style.setProperty('z-index', '2000');
-        el.connections.innerHTML =
-            `<defs>
-                <marker id="endarrow" 
-                        markerUnits="strokeWidth"
-                        markerWidth="4"
-                        markerHeight="3"
-                        refX="3"
-                        refY="1.5"
-                        orient="auto">
-                    <polygon points="0 0, 4 1.5, 0 3" fill="red" />
-                </marker>
-            </defs>`;
-        document.querySelector('#hole-connections').appendChild(el.connections);
+        el.connections = document.querySelector('#connection-lines');
+        el.message = document.querySelector('#message');
+        el.status = document.querySelector('#status');
+        el.path = document.querySelector('#path');
         el.points = document.querySelector('[name="basePoints"]');
         el.itemForm = document.querySelectorAll('#item-form');
+        el.itemForm.item.value = selectedItem;
         el.itemSelector = document.querySelectorAll('input[name="item"]');
         el.itemSelector.forEach(input => {
             input.addEventListener('change', e => {
-                selectedItem = e.target.value;
+                setSelectedItem(e.target.value);
             });
+            input.checked = (selectedItem === input.value);
         });
         el.width = document.querySelector('input[name="chosen-width"]');
         el.width.addEventListener('change', e => {
@@ -491,45 +572,12 @@
         el.scene.id = 'scene';
         el.scene.addEventListener('click', onSceneClicked);
         el.scene.addEventListener('mousemove', onSceneMouseMove);
-        document.querySelector('#clear').addEventListener('click',
-            () => {
-                for (const conn of level.connections) {
-                    conn.remove();
-                }
-                if (confirm('Do you really want to discard your work and begin from scratch?')) {
-                    level.data = generateEmptyLevel(parseInt(el.width.value), parseInt(el.height.value));
-                    level.connections = [];
-                }
-                build();
-                evaluateTiles();
-                updatePlayButton();
-            });
-        document.querySelector('#copy-to-clipboard').addEventListener('click',
-            () => {
-                console.debug(level);
-                const levelData = {
-                    thresholds: [
-                        parseInt(el.threshold1.value),
-                        parseInt(el.threshold2.value),
-                        parseInt(el.threshold3.value),
-                    ],
-                    basePoints: parseInt(el.points.value),
-                    name: '<no name>',
-                    data: level.data,
-                    connections: level.connectionData(),
-                };
-                navigator.clipboard.writeText(JSON.stringify(levelData, null, 2)).then(
-                    () => { },
-                    () => {
-                        alert('Copy failed.');
-                    }
-                );
-            });
+        document.querySelector('#clear').addEventListener('click', clearLevel);
+        document.querySelector('#copy-to-clipboard').addEventListener('click', copyToClipboard);
         window.addEventListener('keydown', onKeyDown);
         window.addEventListener('keyup', onKeyUp);
         window.addEventListener('keypress', onKeyPress);
         window.addEventListener('hashchange', onHashChanged);
-        document.itemForm.item.value = selectedItem;
         onHashChanged();
     }
     window.addEventListener('load', main);

@@ -39,6 +39,11 @@
     let level = {
         origData: [],
         connections: [],
+        dumpConnections: function() {
+            for (const conn of level.connections) {
+                console.debug(`${conn.src.x},${conn.src.y} -> ${conn.dst.x},${conn.dst.y}`);
+            }
+        },
         data: [],
         score: 0,
         width: 0,
@@ -143,8 +148,7 @@
             connections: level.connections,
         });
         let [node, iterations] = await solver.shortestPath();
-        console.debug(`iterations = ${iterations}`);
-        console.debug(`nodes = ${solver.nodeCount}`);
+        console.debug(`iterations = ${iterations}, nodes = ${solver.nodeCount}`);
         if (node === null) {
             document.querySelector('#path').textContent = '<no solution>';
             return;
@@ -168,7 +172,7 @@
             x = node.x;
             y = node.y;
         }
-        document.querySelector('#path').textContent = `${moves.length}: ${moves.join(' ')}`;
+        document.querySelector('#path').textContent = `${moves.length}: ${moves.join('')}`;
     }
 
     function placePlayerAt(x, y) {
@@ -253,7 +257,7 @@
         let { x, y } = player;
         let xStep = 0;
         let yStep = 0;
-        while ([Tile.Ice, Tile.Coin, Tile.Marker].includes(level.cellAt(x + dx, y + dy))) {
+        while ([Tile.Ice, Tile.Coin, Tile.Gold, Tile.Marker, Tile.Empty].includes(level.cellAt(x + dx, y + dy))) {
             x += dx;
             y += dy;
             xStep += dx;
