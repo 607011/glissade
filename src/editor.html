@@ -49,9 +49,36 @@
             z-index: 2000;
         }
 
-        #path {
+        .connection-tip {
+            pointer-events: visibleStroke;
+            fill: red;
+        }
+
+        .connection-tip.hover {
+            fill: orange;
+        }
+
+        .connection {
+            pointer-events: visibleStroke;
+            stroke-width: 3px;
+            stroke: red;
+            fill: red;
+        }
+
+        .connection.hover {
+            outline: 2px dashed orange;
+            stroke: orange;
+            fill: orange;
+        }
+
+        #path,
+        #message {
             position: relative;
             left: 10px;
+        }
+
+        #path {
+            letter-spacing: 1px;
         }
 
         #editor {
@@ -75,8 +102,8 @@
         }
 
         .tile:hover {
-            outline: 4px solid #c11b45;
-            z-index: 1000;
+            outline: 4px solid #c11b45e0;
+            z-index: 1;
         }
 
         input[name="item"] {
@@ -99,17 +126,16 @@
             outline: 2px solid #ff1010;
         }
 
-        input[type="number"] {
+        input[type="number"], input[type="text"] {
             padding: 4px;
         }
 
-        input[name="threshold1"], input[name="threshold2"], input[name="threshold3"], input[name="basePoints"] {
+        input[name="threshold1"],
+        input[name="threshold2"],
+        input[name="threshold3"],
+        input[name="basePoints"] {
             width: 4em;
         }
-
-        /* #output {
-            font-family: 'Courier New', Courier, monospace;
-        } */
 
         button {
             border: 1px solid black;
@@ -130,9 +156,11 @@
         #sidebar {
             margin: 10px;
             display: flex;
-            align-content: space-between;
-            justify-content: space-between;
             flex-direction: column;
+        }
+
+        #sidebar>div {
+            margin-bottom: 10px;
         }
     </style>
     <script async src="chilly.js"></script>
@@ -157,7 +185,7 @@
                         <span class="tile ice" title="[i]ce"></span>
                     </label>
                     <label>
-                        <input name="item" type="radio" value="rock" checked />
+                        <input name="item" type="radio" value="rock" />
                         <span class="tile rock" title="[r]ock"></span>
                     </label>
                     <label>
@@ -180,12 +208,21 @@
             </div>
             <div id="game-container">
                 <div id="game"></div>
-                <div id="hole-connections"></div>
+                <div id="hole-connections">
+                    <svg xml:ns="http://www.w3.org/2000/svg" style="z-index: 2000" id="connection-lines">
+                        <defs>
+                            <marker id="endarrow" markerUnits="strokeWidth" markerWidth="4" markerHeight="3" refX="3" refY="1.5" orient="auto">
+                                <polygon class="connection-tip" points="0 0, 4 1.5, 0 3" />
+                            </marker>
+                        </defs>
+                    </svg>
+                </div>
             </div>
+            <div id="message"></div>
             <div id="path"></div>
         </div>
         <div id="sidebar">
-            <span><a href="index.html" target="_blank" id="play">▶️ Play game in new window</a></span>
+            <div><a href="index.html" target="_blank" id="play">▶️ Play game in new window</a></div>
             <div>
                 <button id="clear">New game</button>
                 <div style="margin-top: 10px;">
@@ -208,7 +245,15 @@
                     <input type="number" name="basePoints" value="10" style="width: 4em" />
                 </div>
             </div>
+            <div>
+                <div>Level name</div>
+                <div>
+                    <input type="text" name="levelName" value="" placeholder="level’s name goes here ..."/>
+                </div>
+            </div>
+            <div></div>
             <button id="copy-to-clipboard">Copy JSON data to clipboard</button>
+            <div id="status"></div>
         </div>
     </div>
 </body>
