@@ -22,7 +22,6 @@
     };
 
     let LEVELS;
-    const DEBUG = true;
     const START_LEVEL = 0;
     const el = {};
     const easingWithoutOvershoot = bezier(.34, .87, 1, 1);
@@ -323,13 +322,6 @@
     }
 
     function onKeyPressed(e) {
-        // console.debug(e);
-        if (!DEBUG && e.type === 'keypress' && e.key == 'r' && (e.ctrlKey || e.metaKey)) {
-            // prevent reloading of page
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            return;
-        }
         switch (state) {
             case State.GameEnd:
                 if (e.type === 'keypress') {
