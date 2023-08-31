@@ -263,6 +263,9 @@
             xStep += dx;
             yStep += dy;
         }
+        exitReached = level.cellAt(x + dx, y + dy) === Tile.Exit;
+        holeEntered = level.cellAt(x + dx, y + dy) === Tile.Hole;
+        let dist = Math.abs(xStep) + Math.abs(yStep);
         if (xStep > 0) {
             player.el.classList.add('penguin-right');
             hasMoved = true;
@@ -279,10 +282,11 @@
             player.el.classList.add('penguin-down');
             hasMoved = true;
         }
-        exitReached = level.cellAt(x + dx, y + dy) === Tile.Exit;
-        holeEntered = level.cellAt(x + dx, y + dy) === Tile.Hole;
-        const dist = Math.abs(xStep) + Math.abs(yStep);
-        if (exitReached || holeEntered || dist > 0) {
+        else if (exitReached || holeEntered) {
+            hasMoved = true;
+            dist += 1;
+        }
+        if (dist > 0) {
             player.distance += dist;
             isMoving = true;
             if (exitReached || holeEntered) {
