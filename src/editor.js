@@ -127,9 +127,6 @@
     function createConnectionLine(src, dst, addListeners = false) {
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         line.setAttribute('class', 'connection');
-        line.setAttribute('fill', 'none');
-        line.setAttribute('stroke', 'red');
-        line.setAttribute('stroke-width', '3');
         line.setAttribute('data-x1', src.x);
         line.setAttribute('data-y1', src.y);
         line.setAttribute('data-x2', dst.x);
@@ -138,7 +135,6 @@
         line.setAttribute('y1', upscaled(src.y));
         line.setAttribute('x2', upscaled(dst.x));
         line.setAttribute('y2', upscaled(dst.y));
-        line.setAttribute('marker-end', 'url(#endarrow)');
         if (addListeners) {
             addConnectionLineListeners(line);
         }

@@ -49,26 +49,17 @@
             z-index: 2000;
         }
 
-        .connection-tip {
-            pointer-events: visibleStroke;
-            fill: red;
-        }
-
-        .connection-tip.hover {
-            fill: orange;
-        }
-
         .connection {
             pointer-events: visibleStroke;
             stroke-width: 3px;
             stroke: red;
-            fill: red;
+            marker-end: url("#endarrow");
         }
 
         .connection.hover {
             outline: 2px dashed orange;
             stroke: orange;
-            fill: orange;
+            marker-end: url("#endarrow-hover");
         }
 
         #path,
@@ -212,7 +203,10 @@
                     <svg xml:ns="http://www.w3.org/2000/svg" style="z-index: 2000" id="connection-lines">
                         <defs>
                             <marker id="endarrow" markerUnits="strokeWidth" markerWidth="4" markerHeight="3" refX="3" refY="1.5" orient="auto">
-                                <polygon class="connection-tip" points="0 0, 4 1.5, 0 3" />
+                                <polygon fill="red" points="0 0, 4 1.5, 0 3" />
+                            </marker>
+                            <marker id="endarrow-hover" markerUnits="strokeWidth" markerWidth="4" markerHeight="3" refX="3" refY="1.5" orient="auto">
+                                <polygon fill="orange" points="0 0, 4 1.5, 0 3" />
                             </marker>
                         </defs>
                     </svg>
