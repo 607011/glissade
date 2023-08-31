@@ -84,7 +84,7 @@
         const HINT_NAMES = { 'U': 'hint-up', 'R': 'hint-right', 'D': 'hint-down', 'L': 'hint-left' };
         let { x, y } = path[0];
         for (let i = 1; i < path.length; ++i) {
-            let node = path[i];
+            const node = path[i];
             moves.push(node.move);
             const hint = document.createElement('div');
             hint.className = `tile hint ${HINT_NAMES[node.move]}`;
