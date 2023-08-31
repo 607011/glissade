@@ -378,20 +378,28 @@ class ChillySolver {
             let xStep = 0;
             let yStep = 0;
             let prevNode = source;
-            while ([Tile.Ice, Tile.Coin, Tile.Gold, Tile.Marker, Tile.Empty].includes(this.cellAt(x + dx, y + dy))) {
-                x += dx;
-                y += dy;
-                if ([Tile.Coin, Tile.Gold].includes(this.cellAt(x, y))) {
-                    const collectible = this.#getCachedNode(this.cellAt(x, y), x, y);
-                    yield { move, node: collectible };
-                    const nextTile = this.cellAt(x + dx, y + dy);
-                    this.#cacheEdge(prevNode, collectible, nextTile === Tile.Rock ? 1 : 0);
-                    prevNode = collectible;
+            try {
+                while ([Tile.Ice, Tile.Coin, Tile.Gold, Tile.Marker, Tile.Empty].includes(this.cellAt(x + dx, y + dy))) {
+                    x += dx;
+                    y += dy;
+                    if ([Tile.Coin, Tile.Gold].includes(this.cellAt(x, y))) {
+                        const collectible = this.#getCachedNode(this.cellAt(x, y), x, y);
+                        yield { move, node: collectible };
+                        const nextTile = this.cellAt(x + dx, y + dy);
+                        this.#cacheEdge(prevNode, collectible, nextTile === Tile.Rock ? 1 : 0);
+                        prevNode = collectible;
+                    }
+                    xStep += dx;
+                    yStep += dy;
+                    if (Math.abs(xStep) > this.#levelWidth || Math.abs(yStep) > this.#levelHeight)
+                        return;
+                }    
+            }
+            catch (e) {
+                if (e instanceof TypeError) {
+                    throw new Error(`Probable loop detected in level while inspecting neighborhood of tile at ${this.#norm_x(x)}, ${this.#norm_y(y)}.`);
                 }
-                xStep += dx;
-                yStep += dy;
-                if (Math.abs(xStep) > this.#levelWidth || Math.abs(yStep) > this.#levelHeight)
-                    return;
+                return;
             }
             const stopTile = this.cellAt(x + dx, y + dy);
             let node = null;
