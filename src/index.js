@@ -191,10 +191,13 @@
 
     function teleport() {
         sounds.teleport.play();
-        const otherHole = level.connections.find(conn => conn.src.x === player.x && conn.src.y === player.y).dst;
-        placePlayerAt(otherHole.x, otherHole.y);
+        const connection = level.connections.find(conn => conn.src.x === player.x && conn.src.y === player.y);
+        if (connection) {
+            const otherHole = connection.dst;
+            placePlayerAt(otherHole.x, otherHole.y);
+        }
         scrollIntoView();
-        standUpright();
+        standUpright();    
     }
 
     function rockHit() {
