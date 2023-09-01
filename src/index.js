@@ -11,7 +11,7 @@
         static ProgressScreen = 5;
     };
 
-    class STORAGE_KEY {
+    class StorageKey {
         static LevelNum = 'glissade.level';
         static MaxLevelNum = 'glissade.max-level';
     };
@@ -616,11 +616,13 @@
     }
 
     function maxLevelNum() {
-        let maxLvl = parseInt(localStorage.getItem(STORAGE_KEY.MaxLevelNum));
+        let maxLvl = parseInt(localStorage.getItem(StorageKey.MaxLevelNum));
         if (isNaN(maxLvl)) {
             maxLvl = 0;
         }
-        return Math.max(level.currentIdx, Math.min(LEVELS.length, maxLvl));
+        console.debug(level.currentIdx, LEVELS.length, maxLvl);
+        maxLvl = Math.max(level.currentIdx, Math.min(LEVELS.length, maxLvl));
+        return maxLvl;
     }
 
     function getLevelScore() {
@@ -629,7 +631,7 @@
 
     function gotoLevel(idx) {
         level.currentIdx = idx;
-        localStorage.setItem(STORAGE_KEY.LevelNum, level.currentIdx);
+        localStorage.setItem(StorageKey.LevelNum, level.currentIdx);
         resetLevel();
         play();
     }
@@ -639,8 +641,8 @@
         player.score += pointsEarned;
         el.totalScore.textContent = player.score;
         ++level.currentIdx;
-        localStorage.setItem(STORAGE_KEY.LevelNum, level.currentIdx);
-        localStorage.setItem(STORAGE_KEY.MaxLevelNum, maxLevelNum());
+        localStorage.setItem(StorageKey.LevelNum, level.currentIdx);
+        localStorage.setItem(StorageKey.MaxLevelNum, maxLevelNum() + 1);
         resetLevel();
         play();
     }
