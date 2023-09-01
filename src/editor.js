@@ -72,9 +72,11 @@
         }
         let [node, iterations] = solverResult;
         if (node === null) {
-            el.path.textContent = '<no solution>';
+            el.message.textContent = '<no solutions>';
+            el.path.textContent = '';
             return;
         }
+        // backtrace path from destination node
         let path = [node];
         while (node.hasParent()) {
             node = node.parent;
