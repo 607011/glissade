@@ -273,9 +273,15 @@
     <div id="main-container">
         <div id="game-container">
             <div id="menu">
-                <span class="tile speaker-muted" id="loudspeaker" title="Enable audio"></span>
+                <span>
+                    <span class="interactive tile speaker-muted" id="loudspeaker" title="Audio on/off"></span>
+                    <span class="interactive tile help" id="help" title="Help"></span>
+                </span>
                 <span id="level-num"></span>
-                <span class="tile hamburger" id="choose-level" title="Choose level"></span>
+                <span>
+                    <span class="interactive tile restart" id="restart-level" title="Restart level"></span>
+                    <span class="interactive tile hamburger" id="choose-level" title="Choose level"></span>    
+                </span>
             </div>
             <div id="level-stats">
                 <div>Total <span id="total-score" title="total score">0</span></div>
@@ -284,8 +290,7 @@
             </div>
             <div id="game"></div>
             <div id="extras">
-                <button id="help">Help</button>
-                <button id="find-route">Find route</button>
+                <!-- <button id="find-route">Find route</button> -->
                 <!-- <button id="bfs">BFS Animation</button> -->
                 <span id="path"></span>
             </div>

@@ -760,9 +760,8 @@
         el.loudspeaker.addEventListener('click', checkAudio);
         // el.findRouteButton = document.querySelector('#find-route');
         // el.findRouteButton.addEventListener('click', findRoute);
-        document.querySelector('#find-route').remove();
-        el.helpButton = document.querySelector('#help');
-        el.helpButton.addEventListener('click', help);
+        document.querySelector('#restart-level').addEventListener('click', resetLevel);
+        document.querySelector('#help').addEventListener('click', help);
         // el.bfsButton = document.querySelector('#bfs');
         // el.bfsButton.addEventListener('click', bfsAnimate);
         el.splashTemplate = document.querySelector("#splash");
