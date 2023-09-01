@@ -317,6 +317,9 @@
             }
         );
     }
+    /**
+     * Clear all level data after user's consent.
+     */
     function clearLevel() {
         if (confirm('Do you really want to discard your work and begin from scratch?')) {
             for (const conn of level.connections) {
