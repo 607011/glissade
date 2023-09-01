@@ -267,7 +267,8 @@
         el.scene.style.gridTemplateRows = `repeat(${height}, ${Tile.Size}px)`;
         el.scene.style.width = `${width * Tile.Size}px`;
         el.scene.style.height = `${height * Tile.Size}px`;
-        el.scene.replaceChildren(...generateTiles());
+        const tiles = generateTiles();
+        el.scene.replaceChildren(...tiles);
         el.connections.setAttribute('viewBox', `0 0 ${width * Tile.Size} ${height * Tile.Size}`);
         el.connections.setAttribute('width', `${width * Tile.Size}`);
         el.connections.setAttribute('height', `${height * Tile.Size}`);
