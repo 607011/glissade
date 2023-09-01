@@ -52,6 +52,7 @@
         localStorage.setItem(STORAGE_KEY_ITEM, item);
     }
     async function solve() {
+        el.game.querySelectorAll('.hint').forEach(el => el.remove());
         const solver = new ChillySolver({
             data: level.data,
             connections: level.connectionData()
@@ -79,7 +80,6 @@
             node = node.parent;
             path.unshift(node);
         }
-        el.game.querySelectorAll('.hint').forEach(el => el.remove());
         const moves = [];
         const HINT_NAMES = { 'U': 'hint-up', 'R': 'hint-right', 'D': 'hint-down', 'L': 'hint-left' };
         let { x, y } = path[0];
