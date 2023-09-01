@@ -502,6 +502,7 @@
         const hash = window.location.hash.substring(1);
         const params = hash.split(';');
         let w = 0, h = 0;
+        level.connections = [];
         for (const param of params) {
             const [key, value] = param.split('=');
             if (key === 'width' && Number(value) > 0) {
