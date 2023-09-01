@@ -38,7 +38,7 @@
     let level = {
         origData: [],
         connections: [],
-        dumpConnections: function() {
+        dumpConnections: function () {
             for (const conn of level.connections) {
                 console.debug(`${conn.src.x},${conn.src.y} -> ${conn.dst.x},${conn.dst.y}`);
             }
@@ -200,7 +200,7 @@
             placePlayerAt(otherHole.x, otherHole.y);
         }
         scrollIntoView();
-        standUpright();    
+        standUpright();
     }
 
     function rockHit() {
