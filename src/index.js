@@ -772,16 +772,16 @@
         setupAudio();
         window.addEventListener('keydown', onKeyPressed);
         window.addEventListener('keypress', onKeyPressed);
-        document.querySelector('.control.arrow-up').addEventListener('click', () => {
+        document.querySelector('.interactive.arrow-up').addEventListener('click', () => {
             window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'w' }));
         });
-        document.querySelector('.control.arrow-down').addEventListener('click', () => {
+        document.querySelector('.interactive.arrow-down').addEventListener('click', () => {
             window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 's' }));
         });
-        document.querySelector('.control.arrow-right').addEventListener('click', () => {
+        document.querySelector('.interactive.arrow-right').addEventListener('click', () => {
             window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'd' }));
         });
-        document.querySelector('.control.arrow-left').addEventListener('click', () => {
+        document.querySelector('.interactive.arrow-left').addEventListener('click', () => {
             window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'a' }));
         });
         restartGame();

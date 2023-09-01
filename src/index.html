@@ -195,10 +195,6 @@
             overflow-wrap: anywhere;
         }
 
-        .control {
-            cursor: pointer;
-        }
-
         .penguin {
             position: absolute;
         }
@@ -266,6 +262,10 @@
             top: 0;
             opacity: 0.2;
         }
+
+        .interactive {
+            cursor: pointer;
+        }
     </style>
 </head>
 
@@ -297,13 +297,13 @@
         </div>
         <div id="controls" class="hidden">
             <div class="tile empty"></div>
-            <div class="control tile arrow-up"></div>
+            <div class="interactive tile arrow-up"></div>
             <div class="tile empty"></div>
-            <div class="control tile arrow-left"></div>
+            <div class="interactive tile arrow-left"></div>
             <div class="tile empty"></div>
-            <div class="control tile arrow-right"></div>
+            <div class="interactive tile arrow-right"></div>
             <div class="tile empty"></div>
-            <div class="control tile arrow-down"></div>
+            <div class="interactive tile arrow-down"></div>
             <div class="tile empty"></div>
         </div>
     </div>
