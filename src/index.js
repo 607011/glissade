@@ -516,7 +516,10 @@
         const numStars = getNumStars();
         for (let i = 0; i < numStars; ++i) {
             stars[i].classList.replace('star-pale', 'star');
-            stars[i].classList.add('pulse');
+            stars[i].classList.add('pulse')
+            if (i > 0) {
+                stars[i].classList.add(`pulse${i}`);
+            }
         }
         congrats.querySelector('div>div>div').innerHTML = (function () {
             switch (numStars) {
@@ -559,7 +562,6 @@
     }
 
     function setLevel(levelData) {
-        console.debug(levelData);
         level.data = [...levelData.data];
         level.connections = levelData.connections;
         level.origData = [...levelData.data];
@@ -620,7 +622,6 @@
         if (isNaN(maxLvl)) {
             maxLvl = 0;
         }
-        console.debug(level.currentIdx, LEVELS.length, maxLvl);
         maxLvl = Math.max(level.currentIdx, Math.min(LEVELS.length, maxLvl));
         return maxLvl;
     }
