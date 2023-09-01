@@ -697,16 +697,14 @@
     }
 
     function restartGame() {
-        level.currentIdx = (function () {
-            let levelNum = Math.min(LEVELS.length - 1, parseInt(localStorage.getItem(STORAGE_KEY.LevelNum)));
-            if (isNaN(levelNum)) {
-                levelNum = START_LEVEL;
-            }
-            if (levelNum < 0) {
-                levelNum = 0;
-            }
-            return levelNum;
-        })();
+        let levelNum = Math.min(LEVELS.length - 1, parseInt(localStorage.getItem(StorageKey.LevelNum)));
+        if (isNaN(levelNum)) {
+            levelNum = START_LEVEL;
+        }
+        if (levelNum < 0) {
+            levelNum = 0;
+        }
+        level.currentIdx = levelNum;
         resetLevel();
     }
 
