@@ -6,6 +6,7 @@ class Tile {
     static Ice = ' ';
     static Marker = '.';
     static Rock = '#';
+    static Flower = 'Y';
     static Exit = 'X';
     static Player = 'P';
     static Coin = '$';
@@ -379,7 +380,7 @@ class ChillySolver {
             let yStep = 0;
             let prevNode = source;
             try {
-                while ([Tile.Ice, Tile.Coin, Tile.Gold, Tile.Marker, Tile.Empty].includes(this.cellAt(x + dx, y + dy))) {
+                while ([Tile.Ice, Tile.Coin, Tile.Gold, Tile.Marker, Tile.Flower, Tile.Empty].includes(this.cellAt(x + dx, y + dy))) {
                     x += dx;
                     y += dy;
                     if ([Tile.Coin, Tile.Gold].includes(this.cellAt(x, y))) {
@@ -442,7 +443,7 @@ class ChillySolver {
             let xStep = 0;
             let yStep = 0;
             let prevNode = source;
-            while ([Tile.Ice, Tile.Coin, Tile.Gold, Tile.Marker, Tile.Empty].includes(this.cellAt(x + dx, y + dy))) {
+            while ([Tile.Ice, Tile.Coin, Tile.Gold, Tile.Flower, Tile.Marker, Tile.Empty].includes(this.cellAt(x + dx, y + dy))) {
                 x += dx;
                 y += dy;
                 if ([Tile.Coin, Tile.Gold].includes(this.cellAt(x, y))) {

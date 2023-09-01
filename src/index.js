@@ -458,6 +458,9 @@
                     case Tile.Gold:
                         tile.classList.add('gold');
                         break;
+                    case Tile.Flower:
+                        tile.classList.add('flower');
+                        break;
                     case Tile.Exit:
                         tile.classList.add('exit');
                         break;
