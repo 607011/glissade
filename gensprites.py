@@ -23,16 +23,16 @@ def main():
         for img in images:
             print(f'''{img['name']}''')
             result_img.paste(img['data'], (x, 0))
-            scale = img['data'].size[0] // config['tile']['width']
-            css += f""".{os.path.splitext(os.path.basename(img['name']))[0]}{{background-position:{-x // scale}px 0}}\n"""
+            scale = img['data'].size[0] / config['tile']['width']
+            css += f""".{os.path.splitext(os.path.basename(img['name']))[0]}{{background-position:{-x / scale:.0f}px 0}}\n"""
             x += img['data'].size[0]
     else:
         y = 0
         for img in images:
             print(f'''{img['name']}''')
             result_img.paste(img['data'], (0, y))
-            scale = img['data'].size[1] // config['tile']['height']
-            css += f""".{os.path.splitext(os.path.basename(img['name']))[0]}{{background-position:0 {-y // scale}px}}\n"""
+            scale = img['data'].size[1] / config['tile']['height']
+            css += f""".{os.path.splitext(os.path.basename(img['name']))[0]}{{background-position:0 {-y / scale:.0f}px}}\n"""
             y += img['data'].size[1]
 
     if 'dst' in config:
@@ -51,7 +51,7 @@ def main():
     position: relative;
     top: 0;
     left: 0;
-    cursor: pointer;
+    cursor: inherit;
     box-sizing: content-box;
     background-size: cover;
     background-repeat: no-repeat;

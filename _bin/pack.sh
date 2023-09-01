@@ -1,5 +1,9 @@
 #!/bin/bash
 
+if [ -e .env ]; then
+    source .env
+fi
+
 DST=./package
 
 mkdir -p ${DST}
@@ -14,3 +18,7 @@ cd ${DST}
 
 7z a -y  -tzip ../rutschpartie.zip . -xr!.DS_Store -xr!.gitignore
 cd ..
+
+if [ -n "${REMOTE}" ]; then
+    rsync -rav --delete ${DST}/* $REMOTE
+fi

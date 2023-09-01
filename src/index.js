@@ -11,7 +11,7 @@
         static ProgressScreen = 5;
     };
 
-    class STORAGE_KEY {
+    class StorageKey {
         static LevelNum = 'glissade.level';
         static MaxLevelNum = 'glissade.max-level';
     };
@@ -22,7 +22,6 @@
     };
 
     let LEVELS;
-    const DEBUG = true;
     const START_LEVEL = 0;
     const el = {};
     const easingWithoutOvershoot = bezier(.34, .87, 1, 1);
@@ -38,6 +37,12 @@
     };
     let level = {
         origData: [],
+        connections: [],
+        dumpConnections: function () {
+            for (const conn of level.connections) {
+                console.debug(`${conn.src.x},${conn.src.y} -> ${conn.dst.x},${conn.dst.y}`);
+            }
+        },
         data: [],
         score: 0,
         width: 0,
@@ -137,11 +142,12 @@
     }
 
     async function help() {
-        const solver = new ChillySolver([...level.origData]);
-
+        const solver = new ChillySolver({
+            data: level.origData,
+            connections: level.connections,
+        });
         let [node, iterations] = await solver.shortestPath();
-        console.debug(`iterations = ${iterations}`);
-        console.debug(`nodes = ${solver.nodeCount}`);
+        console.debug(`iterations = ${iterations}, nodes = ${solver.nodeCount}`);
         if (node === null) {
             document.querySelector('#path').textContent = '<no solution>';
             return;
@@ -165,7 +171,7 @@
             x = node.x;
             y = node.y;
         }
-        document.querySelector('#path').textContent = `${moves.length}: ${moves.join(' ')}`;
+        document.querySelector('#path').textContent = `${moves.length}: ${moves.join('')}`;
     }
 
     function placePlayerAt(x, y) {
@@ -176,6 +182,7 @@
     }
 
     function scrollIntoView() {
+        // XXX: good idea, but doesn't work :-/
         player.el.scrollIntoView();
     }
 
@@ -187,8 +194,11 @@
 
     function teleport() {
         sounds.teleport.play();
-        const otherHole = holes.filter(v => v.x !== player.x || v.y !== player.y)[0];
-        placePlayerAt(otherHole.x, otherHole.y);
+        const connection = level.connections.find(conn => conn.src.x === player.x && conn.src.y === player.y);
+        if (connection) {
+            const otherHole = connection.dst;
+            placePlayerAt(otherHole.x, otherHole.y);
+        }
         scrollIntoView();
         standUpright();
     }
@@ -246,12 +256,15 @@
         let { x, y } = player;
         let xStep = 0;
         let yStep = 0;
-        while ([Tile.Ice, Tile.Coin, Tile.Marker].includes(level.cellAt(x + dx, y + dy))) {
+        while ([Tile.Ice, Tile.Coin, Tile.Gold, Tile.Marker, Tile.Empty].includes(level.cellAt(x + dx, y + dy))) {
             x += dx;
             y += dy;
             xStep += dx;
             yStep += dy;
         }
+        exitReached = level.cellAt(x + dx, y + dy) === Tile.Exit;
+        holeEntered = level.cellAt(x + dx, y + dy) === Tile.Hole;
+        let dist = Math.abs(xStep) + Math.abs(yStep);
         if (xStep > 0) {
             player.el.classList.add('penguin-right');
             hasMoved = true;
@@ -268,10 +281,11 @@
             player.el.classList.add('penguin-down');
             hasMoved = true;
         }
-        exitReached = level.cellAt(x + dx, y + dy) === Tile.Exit;
-        holeEntered = level.cellAt(x + dx, y + dy) === Tile.Hole;
-        const dist = Math.abs(xStep) + Math.abs(yStep);
-        if (exitReached || holeEntered || dist > 0) {
+        else if (exitReached || holeEntered) {
+            hasMoved = true;
+            dist += 1;
+        }
+        if (dist > 0) {
             player.distance += dist;
             isMoving = true;
             if (exitReached || holeEntered) {
@@ -308,13 +322,6 @@
     }
 
     function onKeyPressed(e) {
-        // console.debug(e);
-        if (!DEBUG && e.type === 'keypress' && e.key == 'r' && (e.ctrlKey || e.metaKey)) {
-            // prevent reloading of page
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            return;
-        }
         switch (state) {
             case State.GameEnd:
                 if (e.type === 'keypress') {
@@ -451,6 +458,9 @@
                     case Tile.Gold:
                         tile.classList.add('gold');
                         break;
+                    case Tile.Flower:
+                        tile.classList.add('flower');
+                        break;
                     case Tile.Exit:
                         tile.classList.add('exit');
                         break;
@@ -506,7 +516,10 @@
         const numStars = getNumStars();
         for (let i = 0; i < numStars; ++i) {
             stars[i].classList.replace('star-pale', 'star');
-            stars[i].classList.add('pulse');
+            stars[i].classList.add('pulse')
+            if (i > 0) {
+                stars[i].classList.add(`pulse${i}`);
+            }
         }
         congrats.querySelector('div>div>div').innerHTML = (function () {
             switch (numStars) {
@@ -549,10 +562,17 @@
     }
 
     function setLevel(levelData) {
-        level.data = [...levelData];
-        level.origData = [...levelData];
+        level.data = [...levelData.data];
+        level.connections = levelData.connections;
+        level.origData = [...levelData.data];
         level.width = level.data[0].length;
         level.height = level.data.length;
+        if (level.connections instanceof Array) {
+            for (const conn of level.connections) {
+                console.assert(level.cellAt(conn.src.x, conn.src.y) === Tile.Hole);
+                console.assert(level.cellAt(conn.dst.x, conn.dst.y) === Tile.Hole);
+            }
+        }
         el.levelNum.textContent = `Level ${level.currentIdx + 1}`;
         player.moves = [];
         player.distance = 0;
@@ -598,11 +618,12 @@
     }
 
     function maxLevelNum() {
-        let maxLvl = parseInt(localStorage.getItem(STORAGE_KEY.MaxLevelNum));
+        let maxLvl = parseInt(localStorage.getItem(StorageKey.MaxLevelNum));
         if (isNaN(maxLvl)) {
             maxLvl = 0;
         }
-        return Math.max(level.currentIdx, Math.min(LEVELS.length, maxLvl));
+        maxLvl = Math.max(level.currentIdx, Math.min(LEVELS.length, maxLvl));
+        return maxLvl;
     }
 
     function getLevelScore() {
@@ -611,7 +632,7 @@
 
     function gotoLevel(idx) {
         level.currentIdx = idx;
-        localStorage.setItem(STORAGE_KEY.LevelNum, level.currentIdx);
+        localStorage.setItem(StorageKey.LevelNum, level.currentIdx);
         resetLevel();
         play();
     }
@@ -621,8 +642,8 @@
         player.score += pointsEarned;
         el.totalScore.textContent = player.score;
         ++level.currentIdx;
-        localStorage.setItem(STORAGE_KEY.LevelNum, level.currentIdx);
-        localStorage.setItem(STORAGE_KEY.MaxLevelNum, maxLevelNum());
+        localStorage.setItem(StorageKey.LevelNum, level.currentIdx);
+        localStorage.setItem(StorageKey.MaxLevelNum, maxLevelNum() + 1);
         resetLevel();
         play();
     }
@@ -661,7 +682,7 @@
         level.score = 0;
         el.levelScore.textContent = '0';
         el.totalScore.textContent = player.score;
-        let levelData = LEVELS[level.currentIdx].data;
+        let levelData = LEVELS[level.currentIdx];
         el.path.textContent = '';
         if (window.location.hash) {
             const hash = window.location.hash.substring(1);
@@ -677,16 +698,14 @@
     }
 
     function restartGame() {
-        level.currentIdx = (function () {
-            let levelNum = Math.min(LEVELS.length - 1, parseInt(localStorage.getItem(STORAGE_KEY.LevelNum)));
-            if (isNaN(levelNum)) {
-                levelNum = START_LEVEL;
-            }
-            if (levelNum < 0) {
-                levelNum = 0;
-            }
-            return levelNum;
-        })();
+        let levelNum = Math.min(LEVELS.length - 1, parseInt(localStorage.getItem(StorageKey.LevelNum)));
+        if (isNaN(levelNum)) {
+            levelNum = START_LEVEL;
+        }
+        if (levelNum < 0) {
+            levelNum = 0;
+        }
+        level.currentIdx = levelNum;
         resetLevel();
     }
 
@@ -742,9 +761,8 @@
         el.loudspeaker.addEventListener('click', checkAudio);
         // el.findRouteButton = document.querySelector('#find-route');
         // el.findRouteButton.addEventListener('click', findRoute);
-        document.querySelector('#find-route').remove();
-        el.helpButton = document.querySelector('#help');
-        el.helpButton.addEventListener('click', help);
+        document.querySelector('#restart-level').addEventListener('click', resetLevel);
+        document.querySelector('#help').addEventListener('click', help);
         // el.bfsButton = document.querySelector('#bfs');
         // el.bfsButton.addEventListener('click', bfsAnimate);
         el.splashTemplate = document.querySelector("#splash");
@@ -755,16 +773,16 @@
         setupAudio();
         window.addEventListener('keydown', onKeyPressed);
         window.addEventListener('keypress', onKeyPressed);
-        document.querySelector('.control.arrow-up').addEventListener('click', () => {
+        document.querySelector('.interactive.arrow-up').addEventListener('click', () => {
             window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'w' }));
         });
-        document.querySelector('.control.arrow-down').addEventListener('click', () => {
+        document.querySelector('.interactive.arrow-down').addEventListener('click', () => {
             window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 's' }));
         });
-        document.querySelector('.control.arrow-right').addEventListener('click', () => {
+        document.querySelector('.interactive.arrow-right').addEventListener('click', () => {
             window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'd' }));
         });
-        document.querySelector('.control.arrow-left').addEventListener('click', () => {
+        document.querySelector('.interactive.arrow-left').addEventListener('click', () => {
             window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'a' }));
         });
         restartGame();
