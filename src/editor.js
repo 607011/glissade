@@ -155,6 +155,9 @@
             console.debug(e.target);
         });
     }
+    /**
+     * Construct processable level data from scene.
+     */
     function evaluateTiles() {
         let x = 0;
         let rows = [];
@@ -195,6 +198,11 @@
         }
         saveLevel(rows);
     }
+    /**
+     * Create tiles for scene from level data.
+     * This function is the counterpart to `evaluateTiles()`.
+     * @returns List of tiles as `HTMLSpanElement`s
+     */
     function generateTiles() {
         let tiles = [];
         for (let y = 0; y < level.data.length; ++y) {
@@ -241,9 +249,17 @@
         }
         return tiles;
     }
+    /**
+     * Check if given HTML element is a hole with an outgoing connection.
+     * @param {HTMLElement} element 
+     * @returns true if given element has an outgoing connection, false otherwise
+     */
     function holeIsSource(element) {
         return level.connections.some(conn => conn.src === element);
     }
+    /**
+     * Build and display scene from level data.
+     */
     function build() {
         width = level.data[0].length;
         height = level.data.length;
@@ -278,6 +294,9 @@
         }
         el.game.replaceChildren(el.scene);
     }
+    /**
+     * Convert all level data to JSON and copy to the clipboard.
+     */
     function copyToClipboard() {
         const levelData = {
             thresholds: [
