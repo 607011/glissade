@@ -153,6 +153,15 @@
         #sidebar>div {
             margin-bottom: 10px;
         }
+
+        li {
+            margin-left: 1em;
+            color: lightgreen;
+        }
+
+        li.problem {
+            color: lightsalmon;
+        }
     </style>
     <script async src="chilly.js"></script>
     <script async src="editor.js"></script>
@@ -245,7 +254,10 @@
                     <input type="text" name="levelName" value="" placeholder="level’s name goes here ..."/>
                 </div>
             </div>
-            <div></div>
+            <div>
+                <div>Problems</div>
+                <ul id="problems"></ul>
+            </div>
             <button id="copy-to-clipboard">Copy JSON data to clipboard</button>
             <div id="status"></div>
         </div>

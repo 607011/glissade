@@ -38,12 +38,16 @@
     let level = {
         data: null,
         connections: [],
+        connectionData: () => console.error('level.connectionData() not properly implemented'),
     };
     let width;
     let height;
     let hole1;
     let connectionLine;
     let selectedConnectionLine = null;
+    function cellAt(x, y) {
+        return level.data[y | 0][x | 0];
+    }
     function upscaled(coord) {
         return (coord | 0) * Tile.Size + Tile.Size / 2;
     }
@@ -100,11 +104,53 @@
         el.threshold2.value = moves.length + 1;
         el.threshold3.value = Math.round(moves.length * 1.4);
     }
+    function checkForProblems() {
+        let problems = [];
+        // check if all connections begin and end at holes
+        for (const conn of level.connections) {
+            const x0 = conn.src.getAttribute('data-x');
+            const y0 = conn.src.getAttribute('data-y');
+            if (cellAt(x0, y0) !== Tile.Hole) {
+                problems.push(`Connection from ${x0},${y0} does not begin at hole`);
+            }
+            const x1 = conn.dst.getAttribute('data-x');
+            const y1 = conn.dst.getAttribute('data-y');
+            if (cellAt(x1, y1) !== Tile.Hole) {
+                problems.push(`Connection to ${x1},${y1} does not end at hole`);
+            }
+        }
+        // check if all holes have an incoming and outgoing connection
+        for (let x = 0; x < width; ++x) {
+            for (let y = 0; y < height; ++y) {
+                if (cellAt(x, y) === Tile.Hole) {
+                    if (!level.connections.find(conn => conn.src.getAttribute('data-x') == x && conn.src.getAttribute('data-y') == y)) {
+                        problems.push(`Hole @ ${x},${y} has no outgoing connection`);
+                    }
+                    if (!level.connections.find(conn => conn.dst.getAttribute('data-x') == x && conn.dst.getAttribute('data-y') == y)) {
+                        problems.push(`Hole @ ${x},${y} has no incoming connection`);
+                    }
+                }
+            }
+        }
+        if (problems.length === 0) {
+            el.problems.innerHTML = '<li>no problems</li>';
+        }
+        else {
+            el.problems.textContent = '';
+            for (const problem of problems) {
+                const li = document.createElement('li');
+                li.className = 'problem';
+                li.textContent = problem;
+                el.problems.appendChild(li);
+            }
+        }
+    }
     function updateAll() {
         solve().then(() => {
             saveLevel();
             updatePlayButton();
             removeHash();
+            checkForProblems();
         });
     }
     function undo() {
@@ -565,6 +611,7 @@
         el.connections = document.querySelector('#connection-lines');
         el.message = document.querySelector('#message');
         el.status = document.querySelector('#status');
+        el.problems = document.querySelector('#problems');
         el.path = document.querySelector('#path');
         el.points = document.querySelector('[name="basePoints"]');
         el.itemForm = document.querySelectorAll('#item-form');
