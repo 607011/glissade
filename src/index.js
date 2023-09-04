@@ -355,6 +355,12 @@
     }
 
     function onKeyPressed(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+            e.preventDefault();
+            e.stopPropagation();
+            resetLevel();
+            return true;
+        }
         switch (state) {
             case State.GameEnd:
                 if (e.type === 'keypress') {
