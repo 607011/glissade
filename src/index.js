@@ -64,6 +64,14 @@
     let easing = null;
     let sounds = {};
 
+    function squared(x) {
+        return x * x;
+    }
+
+    function linear(x) {
+        return x;
+    }
+
     // function sleep(delay) {
     //     return new Promise(resolve => setTimeout(resolve, delay));
     // }
@@ -195,12 +203,37 @@
     function teleport() {
         sounds.teleport.play();
         const connection = level.connections.find(conn => conn.src.x === player.x && conn.src.y === player.y);
-        if (connection) {
-            const otherHole = connection.dst;
-            placePlayerAt(otherHole.x, otherHole.y);
-        }
-        scrollIntoView();
+        player.dest = connection.dst;
+        const angle = Math.atan2(player.dest.y - player.y, player.dest.x - player.x);
+        player.el.classList.add('submerged');
+        player.el.style.transform = `rotate(${angle + Math.PI / 2}rad)`;
         standUpright();
+        const dist = Math.sqrt(squared(player.x - player.dest.x) + squared(player.y - player.dest.y));
+        animationDuration = 150 * dist;
+        t0 = performance.now();
+        t1 = t0 + animationDuration;
+        isMoving = true;
+        easing = linear;
+        animateTeleportation();
+    }
+
+    function animateTeleportation() {
+        const dt = performance.now() - t0;
+        const f = easing(dt / animationDuration);
+        const dx = f * (player.dest.x - player.x);
+        const dy = f * (player.dest.y - player.y);
+        player.el.style.left = `${Tile.Size * ((player.x + dx + level.width) % level.width)}px`;
+        player.el.style.top = `${Tile.Size * ((player.y + dy + level.height) % level.height)}px`;
+        if (performance.now() > t1) {
+            placePlayerAt(player.dest.x, player.dest.y);
+            scrollIntoView();
+            player.el.classList.remove('submerged');
+            player.el.style.transform = 'rotate(0rad)';
+            isMoving = false;
+        }
+        else {
+            requestAnimationFrame(animateTeleportation);
+        }
     }
 
     function rockHit() {
@@ -213,7 +246,7 @@
         el.moveCount.textContent = player.moves.length;
     }
 
-    function animate() {
+    function animateRegularMove() {
         const dt = performance.now() - t0;
         const f = easing(dt / animationDuration);
         const dx = f * (player.dest.x - player.x);
@@ -245,7 +278,7 @@
             }
         }
         else {
-            requestAnimationFrame(animate);
+            requestAnimationFrame(animateRegularMove);
         }
     }
 
@@ -300,7 +333,7 @@
             animationDuration = 100 * dist;
             t0 = performance.now();
             t1 = t0 + animationDuration;
-            requestAnimationFrame(animate);
+            animateRegularMove();
         }
         return hasMoved;
     }
