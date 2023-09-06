@@ -18,21 +18,25 @@ https://github.com/607011/glissade/assets/2240271/9e00c150-b5bb-4559-b994-e9ba59
 
 ## Editor
 
-Zum Spiel gehört ein Editor, mit dem du bestehende Levels verändern und neue kreieren kannst.
+Zum Spiel gehört ein Editor, mit dem du bestehende Levels verändern und neue kreieren kannst:
 
 <img width="703" alt="Editor" src="https://github.com/607011/glissade/assets/2240271/690213fc-63c9-4913-b9c2-9614f63667cf">
+
+Du kannst den Schwierigkeitsgrad zum Beispiel mit Löchern erhöhen, die sich im Editor beliebig miteinander verknüpfen lassen. Fällt Chilly in ein Loch hinein, taucht er zum damit verknüpften Loch und dort wieder auf:
+
+<img width="564" alt="grafik" src="https://github.com/607011/glissade/assets/2240271/18f74ee0-c0ba-4beb-aa43-63a3dae2b261">
 
 Standardmäßig legt „New game“ einen 20 Felder breiten und hohen Level an. Die Größe kannst du über die Eingabefelder darunter ändern.
 
 | Feldkachel  | Bedeutung |
 | - | - |
 | ![](_raw/marker.png) | Damit kannst du den Weg markieren, den Chilly nehmen soll. Die Marker sind nur eine Gedankenstütze für dich; im Spiel erscheinen sie als normale Eisfläche. |
- | ![](_raw/ice.png) | Das ist Eis, kalt und glatt. So glatt, dass ein darübergleitender Chilly erst dann stoppt, wenn er gegen einen Fels dotzt oder in ein Loch fällt. |
- | ![](_raw/rock.png) | Der harte Fels bremst den schlitternden Chilly abrupt auf 0 ab. |
- | ![](_raw/coin.png) | Wenn du Münzen in einen Level packst, veränderst du ihn damit komplett. Das Einsammeln einer Münze schreibt dem Spielerkonto 5 Punkte gut. |
- | ![](_raw/hole.png) | Anders als im richtigen Leben sind diese Löcher nicht lebensgefährlich. Fällt Chilly in eines hinein, taucht er am anderen sofort wieder auf. Diese Formulierung legt schon nahe, dass es nur genau zwei Löcher (oder keines) in einem Level geben darf. |
+| ![](_raw/ice.png) | Das ist Eis, kalt und glatt. So glatt, dass ein darübergleitender Chilly erst dann stoppt, wenn er gegen einen Fels dotzt oder in ein Loch fällt. |
+| ![](_raw/rock.png) | Der harte Fels bremst den schlitternden Chilly abrupt auf 0 ab. |
+| ![](_raw/coin.png) | Wenn du Münzen in einen Level packst, veränderst du ihn damit komplett. Das Einsammeln einer Münze schreibt dem Spielerkonto 5 Punkte gut. |
+| ![](_raw/hole.png) | Anders als im richtigen Leben sind diese Löcher nicht lebensgefährlich. Fällt Chilly in eines hinein, taucht er am damit verknüpften wieder auf. |
 | ![](_raw/exit.png) | Der Ausgang. Hierhin muss Chilly manövriert werden. |
-| ![](_raw/penguin.png) | Der mutige Chilly. Es kann nur einen geben – pro Level. |
+| ![](_raw/penguin.png) | Der tapfere Chilly. Es kann nur einen geben – pro Level. |
 | ![](_raw/empty.png) | Das leere Feld kannst du vorerst ignorieren. |
 
 Die drei Eingabefelder unterhalb der „Thresholds“-Schaltfläche enthalten die Anzahl der Züge, die der Spieler maximal benötigen darf, um drei, zwei oder einen Stern am Level-Ende zu erhalten. Das Feld „Points to earn“ gibt an, wie viel Punkte das Absolvieren des Levels dem Spieler einbringt. Diese Zahl wird mit der Anzahl erhaltener Sterne für den endgültigen Level-Score multipliziert. Der in den Editor eingebaute Solver füllt diese drei automatisch mit sinnvollen Werten. Du kannst sie beliebig ändern, bevor du den fertigen Level ins Spiel integrierst.
