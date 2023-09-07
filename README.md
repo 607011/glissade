@@ -4,7 +4,7 @@
 
 *A mini-game inspired by Pokémon Crystal Ice Path*
 
-Push Chilly, the penguin, through his icy maze to guide him to the exit using the path with the fewest moves. The ground is so slippery that he can only stop at obstacles. If he falls down one hole, he reappears at the other. 
+Push Chilly, the penguin, through his icy maze to guide him to the exit using the path with the fewest moves. The ground is so slippery that he can only stop at obstacles. If he falls down one hole, he reappears at another. 
 
 <img width="472" alt="Level 5" src="https://github.com/607011/glissade/assets/2240271/626dd2d0-bb49-46d2-b8a0-7926ab026978">
 
