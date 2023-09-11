@@ -255,9 +255,9 @@ import('./static/js/howler.core.min.js');
         const dy = f * (player.dest.y - player.y);
         player.el.style.left = `${Tile.Size * ((player.x + dx + level.width) % level.width)}px`;
         player.el.style.top = `${Tile.Size * ((player.y + dy + level.height) % level.height)}px`;
+        scrollIntoView();
         if (performance.now() > t1) {
             placePlayerAt(player.dest.x, player.dest.y);
-            scrollIntoView();
             player.el.classList.remove('submerged');
             player.el.style.transform = 'rotate(0rad)';
             isMoving = false;
@@ -353,8 +353,7 @@ import('./static/js/howler.core.min.js');
             player.distance += dist;
             isMoving = true;
             if (exitReached || holeEntered) {
-                player.dest.x = x + dx;
-                player.dest.y = y + dy;
+                player.dest = { x: x + dx, y: y + dy };
                 easing = easingWithoutOvershoot;
             }
             else {
@@ -386,11 +385,11 @@ import('./static/js/howler.core.min.js');
     }
 
     function onKeyPressed(e) {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+        if (!isMoving && (e.ctrlKey || e.metaKey) && e.key === 'r') {
             e.preventDefault();
             e.stopPropagation();
             resetLevel();
-            return true;
+            return false;
         }
         switch (state) {
             case State.GameEnd:
@@ -578,7 +577,6 @@ import('./static/js/howler.core.min.js');
     function onExitReached() {
         sounds.exit.play();
         standUpright();
-        // console.debug(level.currentIdx, LEVELS.length, level.currentIdx < LEVELS.length);
         setState(State.LevelEnd);
         const congrats = el.congratsTemplate.content.cloneNode(true);
         congrats.querySelector('div.pulsating > span').textContent = level.currentIdx + 1 + 1;
@@ -591,7 +589,7 @@ import('./static/js/howler.core.min.js');
                 stars[i].classList.add(`pulse${i}`);
             }
         }
-        congrats.querySelector('div>div>div').innerHTML = (function () {
+        congrats.querySelector('div>div>div').innerHTML = (function (numStars) {
             switch (numStars) {
                 case 0:
                     return 'Awww ... you could do better';
@@ -604,7 +602,7 @@ import('./static/js/howler.core.min.js');
                 default:
                     return;
             }
-        })();
+        })(numStars);
         el.pointsEarned = congrats.querySelector('.points-earned');
         el.proceed = congrats.querySelector('[data-command="proceed"]');
         if (level.currentIdx + 1 < LEVELS.length) {
