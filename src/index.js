@@ -234,7 +234,7 @@ import('./static/js/howler.core.min.js');
     function teleport() {
         sounds.teleport.play();
         const connection = level.connections.find(conn => conn.src.x === player.x && conn.src.y === player.y);
-        player.dest = connection.dst;
+        player.dest = { ...connection.dst };
         const angle = Math.atan2(player.dest.y - player.y, player.dest.x - player.x);
         player.el.classList.add('submerged');
         player.el.style.transform = `rotate(${angle + Math.PI / 2}rad)`;
