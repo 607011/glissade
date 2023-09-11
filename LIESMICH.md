@@ -28,6 +28,10 @@ Du kannst den Schwierigkeitsgrad zum Beispiel mit Löchern erhöhen, die sich im
 
 Standardmäßig legt „New game“ einen 20 Felder breiten und hohen Level an. Die Größe kannst du über die Eingabefelder darunter ändern.
 
+Mit Strg+Klick (macOS: Cmd+Klick) auf ein Loch markierst du den Startpunkt einer Verbindung, mit Klick auf das Zielloch schließt du die Verbindung ab. 
+
+Wenn du eine Verbindung löschen willst, bewege den Mauscursor darauf. Die Verbindungslinie verändert ihre Farbe. Nun kannst du sie mit der Taste Backspace oder Delete entfernen. 
+
 | Feldkachel  | Bedeutung |
 | - | - |
 | ![](_raw/marker.png) | Damit kannst du den Weg markieren, den Chilly nehmen soll. Die Marker sind nur eine Gedankenstütze für dich; im Spiel erscheinen sie als normale Eisfläche. |
