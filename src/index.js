@@ -208,6 +208,11 @@ import('./static/js/howler.core.min.js');
         document.querySelector('#path').textContent = `${moves.length}: ${moves.join('')}`;
     }
 
+    function onBeforeUnload(e) {
+        e.preventDefault();
+        return false;
+    }
+
     function placePlayerAt(x, y) {
         player.x = (x + level.width) % level.width;
         player.y = (y + level.height) % level.height;
@@ -836,6 +841,7 @@ import('./static/js/howler.core.min.js');
         player.el = document.createElement('span');
         player.el.className = 'tile penguin';
         setupAudio();
+        window.addEventListener("beforeunload", onBeforeUnload, { capture: true });
         window.addEventListener('keydown', onKeyPressed);
         window.addEventListener('keypress', onKeyPressed);
         document.querySelector('.interactive.arrow-up').addEventListener('click', () => {
