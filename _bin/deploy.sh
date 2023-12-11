@@ -37,7 +37,7 @@ do
     uglifyjs --compress --mangle < src/$JSFILE > deploy/$JSFILE
 done
 
-for JSFILE in index.js chilly.js
+for JSFILE in index.js chilly.js queue.js graph.js
 do
     # javascript-obfuscator src/$JSFILE \
     #     --split-strings true \

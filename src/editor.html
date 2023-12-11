@@ -168,6 +168,8 @@
             color: lightsalmon;
         }
     </style>
+    <script async src="graph.js"></script>
+    <script async src="queue.js"></script>
     <script async src="chilly.js"></script>
     <script async src="editor.js"></script>
 </head>
@@ -194,6 +196,10 @@
                         <span class="tile rock" title="[r]ock"></span>
                     </label>
                     <label>
+                        <input name="item" type="radio" value="tree" />
+                        <span class="tile tree" title="[t]ree"></span>
+                    </label>
+                    <label>
                         <input name="item" type="radio" value="coin" />
                         <span class="tile coin" title="[c]oin"></span>
                     </label>
@@ -206,8 +212,8 @@
                         <span class="tile exit" title="e[x]it"></span>
                     </label>
                     <label>
-                        <input name="item" type="radio" value="penguin" />
-                        <span class="tile penguin" title="[p]layer"></span>
+                        <input name="item" type="radio" value="penguin-standing" />
+                        <span class="tile penguin-standing" title="[p]layer"></span>
                     </label>
                 </form>
             </div>

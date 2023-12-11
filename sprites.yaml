@@ -2,6 +2,18 @@ tile:
   width: 32
   height: 32
 src:
+  - _raw/ice.png
+  - _raw/marker.png
+  - _raw/rock.png
+  - _raw/present.png
+  - _raw/present-no-bg.png
+  - _raw/hole.png
+  - _raw/tree.png
+  - _raw/snowy-tree.png
+  - _raw/flower.png
+  - _raw/exit.png
+  - _raw/coin.png
+  - _raw/coin-no-bg.png
   - _raw/visited.png
   - _raw/cross.png
   - _raw/up-arrow.png
@@ -10,21 +22,17 @@ src:
   - _raw/right-arrow.png
   - _raw/hline.png
   - _raw/vline.png
-  - _raw/empty.png
-  - _raw/ice.png
-  - _raw/marker.png
-  - _raw/rock.png
-  - _raw/hole.png
-  - _raw/flower.png
-  - _raw/penguin.png
   - _raw/penguin-submerged.png
+  - _raw/penguin-standing.png
   - _raw/penguin-left.png
   - _raw/penguin-right.png
   - _raw/penguin-up.png
   - _raw/penguin-down.png
-  - _raw/exit.png
-  - _raw/coin.png
-  - _raw/coin-no-bg.png
+  - _raw/penguin-standing-xmas.png
+  - _raw/penguin-left-xmas.png
+  - _raw/penguin-right-xmas.png
+  - _raw/penguin-up-xmas.png
+  - _raw/penguin-down-xmas.png
   - _raw/speaker.png
   - _raw/speaker-muted.png
   - _raw/restart.png
@@ -40,5 +48,5 @@ src:
   - _raw/hint-down.png
   - _raw/hint-left.png
   - _raw/hint-right.png
-order: vertically
+  - _raw/empty.png
 output: src/tiles.css

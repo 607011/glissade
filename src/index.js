@@ -27,6 +27,27 @@ import('./static/js/howler.core.min.js');
 (function (window) {
     "use strict";
 
+    const XMAS = false;
+    const DEBUG = true;
+
+    class RegularTiles {
+        static PenguinUpright = 'penguin-standing';
+        static PenguinLeft = 'penguin-left';
+        static PenguinRight = 'penguin-right';
+        static PenguinUp = 'penguin-up';
+        static PenguinDown = 'penguin-down';
+    }
+
+    class XmasTiles {
+        static PenguinUpright = 'penguin-standing-xmas';
+        static PenguinLeft = 'penguin-left-xmas';
+        static PenguinRight = 'penguin-right-xmas';
+        static PenguinUp = 'penguin-up-xmas';
+        static PenguinDown = 'penguin-down-xmas';
+    }
+
+    const Tiles = XMAS ? XmasTiles : RegularTiles;
+
     class State {
         static PreInit = -1;
         static SplashScreen = 0;
@@ -35,12 +56,13 @@ import('./static/js/howler.core.min.js');
         static GameEnd = 3;
         static SettingsScreen = 4;
         static ProgressScreen = 5;
-    };
+        static Autoplay = 6;
+    }
 
     class StorageKey {
         static LevelNum = 'glissade.level';
         static MaxLevelNum = 'glissade.max-level';
-    };
+    }
 
     const POINTS = {
         $: 5,
@@ -49,26 +71,22 @@ import('./static/js/howler.core.min.js');
 
     let LEVELS;
     const START_LEVEL = 0;
+    const DeceleratingEasing = bezier(.34, .87, 1, 1);
     const el = {};
-    const easingWithoutOvershoot = bezier(.34, .87, 1, 1);
-    const easingWithOvershoot = bezier(.34, .87, 1, 1.1);
     let player = {
         x: 0,
         y: 0,
+        world: { x: 0, y: 0 },
         dest: { x: 0, y: 0 },
         el: null,
         score: 0,
         moves: [],
         distance: 0,
     };
+    let autoplayIdx = 0;
     let level = {
         origData: [],
         connections: [],
-        dumpConnections: function () {
-            for (const conn of level.connections) {
-                console.debug(`${conn.src.x},${conn.src.y} -> ${conn.dst.x},${conn.dst.y}`);
-            }
-        },
         data: [],
         score: 0,
         width: 0,
@@ -77,17 +95,19 @@ import('./static/js/howler.core.min.js');
             return level.data[(y + level.height) % level.height][(x + level.width) % level.width];
         },
         currentIdx: 0,
+        collectibles: {},
+        tiles: [[]],
     };
+    let world = { width: 0, height: 0 };
+    let viewPort = { x: 0, y: 0, width: 0, height: 0 };
     let state = State.PreInit;
     let prevState;
     let t0, t1, animationDuration;
     let pointsEarned;
-    let tiles = [[]];
-    let holes = [];
     let isMoving = false;
     let exitReached = false;
     let holeEntered = false;
-    let easing = null;
+    let easing = DeceleratingEasing;
     let sounds = {};
 
     function squared(x) {
@@ -98,137 +118,88 @@ import('./static/js/howler.core.min.js');
         return x;
     }
 
-    // function sleep(delay) {
-    //     return new Promise(resolve => setTimeout(resolve, delay));
-    // }
-
-    // async function bfsAnimate() {
-    //     el.bfsButton.disabled = true;
-    //     const Directions = {
-    //         L: { dx: -1, dy: 0 },
-    //         R: { dx: +1, dy: 0 },
-    //         D: { dx: 0, dy: +1 },
-    //         U: { dx: 0, dy: -1 },
-    //     };
-    //     const norm_x = x => (x + level.width) % level.width;
-    //     const norm_y = y => (y + level.height) % level.height;
-    //     const SLEEP_MS = 67;
-    //     const handleVisit = async (dst, move, src) => {
-    //         const visited = document.createElement('span');
-    //         visited.className = 'tile visited';
-    //         tiles[dst.y][dst.x].appendChild(visited);
-    //         if (move && src) {
-    //             el.game.querySelectorAll('.line').forEach(el => el.remove());
-    //             const { dx, dy } = Directions[move];
-    //             let x = norm_x(src.x + dx);
-    //             let y = norm_y(src.y + dy);
-    //             if (dst.id !== Tile.Hole) {
-    //                 while (norm_x(x) !== dst.x || norm_y(y) !== dst.y) {
-    //                     const line = document.createElement('span');
-    //                     line.className = 'tile line';
-    //                     if (norm_x(x + dx) === dst.x && norm_y(y + dy) === dst.y) {
-    //                         switch (move) {
-    //                             case 'L': line.classList.add('left-arrow'); break;
-    //                             case 'R': line.classList.add('right-arrow'); break;
-    //                             case 'U': line.classList.add('up-arrow'); break;
-    //                             case 'D': line.classList.add('down-arrow'); break;
-    //                             default: break;
-    //                         }
-    //                     }
-    //                     else {
-    //                         line.classList.add(dx === 0 ? 'vline' : 'hline');
-    //                     }
-    //                     tiles[norm_y(y)][norm_x(x)].appendChild(line);
-    //                     x += dx;
-    //                     y += dy;
-    //                 }
-
-    //             }
-    //         }
-    //         await sleep(SLEEP_MS);
-    //     };
-    //     el.game.querySelectorAll('.visited, .line').forEach(el => el.remove());
-    //     const solver = new ChillySolver([...level.origData]);
-    //     await solver.shortestPath(handleVisit);
-    //     el.bfsButton.disabled = false;
-    // }
-
-    async function findRoute() {
-        el.findRouteButton.disabled = true;
-        const solver = new ChillySolver([...level.origData]);
-        el.game.querySelectorAll('.cross').forEach(el => el.remove());
-        let t0;
-        t0 = performance.now();
-        const nodes = solver.findNodes();
-        console.log(`Nodes found: ${nodes.length}; dt = ${(performance.now() - t0)} ms`, nodes);
-        for (const node of nodes) {
-            const cross = document.createElement('span');
-            cross.className = `tile cross`;
-            tiles[node.y][node.x].appendChild(cross);
-        }
-        // console.debug(solver.edges);
-        t0 = performance.now();
-        const [_source, _destination, route] = await solver.dijkstra2D();
-        console.log(`Route found, dt = ${(performance.now() - t0)} ms`);
-        console.log(route);
-        el.findRouteButton.disabled = false;
-        return nodes;
-    }
-
     async function help() {
         const solver = new ChillySolver({
             data: level.origData,
             connections: level.connections,
         });
-        let [node, iterations] = await solver.shortestPath();
-        console.debug(`iterations = ${iterations}, nodes = ${solver.nodeCount}`);
+        let [node, iterations] = (solver.hasCollectibles())
+            ? await solver.shortestPathAlongCollectibles()
+            : await solver.shortestPath();
+        console.debug(`iterations: ${iterations}, total nodes: ${solver.nodeCount}`);
+        console.debug('Accessible nodes:', solver.accessibleNodes);
         if (node === null) {
             document.querySelector('#path').textContent = '<no solution>';
             return;
         }
+        console.debug(node)
         let path = [node];
-        while (node.hasParent()) {
-            node = node.parent;
-            path.unshift(node);
+        console.debug(`Reached final node @ ${node.x},${node.y}`);
+        while (node.hasMoves() && !node.isStart()) {
+            const move = node.nextMove();
+            node = move.parent;
+            path.unshift(move);
         }
+        console.debug(path);
+        console.debug('Accessible nodes:', JSON.stringify(solver.accessibleNodes, 2));
         const moves = [];
         const HINT_NAMES = { 'U': 'hint-up', 'R': 'hint-right', 'D': 'hint-down', 'L': 'hint-left' };
-        let { x, y } = path[0];
-        for (let i = 1; i < path.length; ++i) {
-            let node = path[i];
-            moves.push(node.move);
-            const hint = document.createElement('div');
-            hint.className = `tile hint ${HINT_NAMES[node.move]}`;
-            if (tiles[y][x].children.length === 0) {
-                tiles[y][x].appendChild(hint);
+        for (const move of path) {
+            moves.push(move.move);
+            if (move.parent) {
+                const { x, y } = move.parent;
+                if (level.tiles[y][x].children.length === 0) {
+                    const hint = document.createElement('div');
+                    hint.className = `tile hint ${HINT_NAMES[move.move]}`;
+                    level.tiles[y][x].appendChild(hint);
+                }
             }
-            x = node.x;
-            y = node.y;
         }
-        document.querySelector('#path').textContent = `${moves.length}: ${moves.join('')}`;
+        document.querySelector('#path').textContent = `${moves.length - 1}: ${moves.join('')}`;
     }
 
-    function onBeforeUnload(e) {
-        e.preventDefault();
-        return false;
+    function placePlayerOnPixel(x, y) {
+        player.world.x = Tile.Size * x;
+        player.world.y = Tile.Size * y;
+        player.el.style.left = `${player.world.x}px`;
+        player.el.style.top = `${player.world.y}px`;
+        scrollIntoView();
+    }
+
+    function placePlayerOnTile(x, y) {
+        player.x = (x + level.width) % level.width;
+        player.y = (y + level.height) % level.height;
+        placePlayerOnPixel(player.x, player.y);
     }
 
     function placePlayerAt(x, y) {
         player.x = (x + level.width) % level.width;
         player.y = (y + level.height) % level.height;
         player.el.style.left = `${Tile.Size * player.x}px`;
-        player.el.style.top = `${Tile.Size * player.y}px`;
+        player.el.style.top = `${Tile.Size * player.y + 1}px`;
+    }
+
+    function onResize(e) {
+        const GameElPadding = 5;
+        viewPort = el.game.getBoundingClientRect();
+        viewPort.width -= 2 * GameElPadding;
+        viewPort.height -= 2 * GameElPadding;
+        el.extraStyles.textContent = `:root {
+            --game-width: ${viewPort.width}px;
+        }`;
+        scrollIntoView();
     }
 
     function scrollIntoView() {
-        // XXX: good idea, but doesn't work :-/
-        player.el.scrollIntoView();
+        el.game.scrollTo({
+            left: player.world.x - viewPort.width / 2,
+            top: player.world.y - viewPort.height / 2,
+            behavior: 'auto',
+        });
     }
 
     function standUpright() {
-        for (const c of ['penguin-left', 'penguin-right', 'penguin-up', 'penguin-down']) {
-            player.el.classList.remove(c);
-        }
+        player.el.classList.remove(Tiles.PenguinLeft, Tiles.PenguinRight, Tiles.PenguinUp, Tiles.PenguinDown);
     }
 
     function teleport() {
@@ -236,40 +207,60 @@ import('./static/js/howler.core.min.js');
         const connection = level.connections.find(conn => conn.src.x === player.x && conn.src.y === player.y);
         player.dest = { ...connection.dst };
         const angle = Math.atan2(player.dest.y - player.y, player.dest.x - player.x);
+        player.el.classList.replace(Tiles.PenguinUpright, 'penguin-submerged')
         player.el.classList.add('submerged');
         player.el.style.transform = `rotate(${angle + Math.PI / 2}rad)`;
         standUpright();
         const dist = Math.sqrt(squared(player.x - player.dest.x) + squared(player.y - player.dest.y));
-        animationDuration = 150 * dist;
+        const animationDurationFactor = (state === State.Autoplay ? 13 : 133);
+        animationDuration = animationDurationFactor * dist;
         t0 = performance.now();
         t1 = t0 + animationDuration;
         isMoving = true;
         easing = linear;
-        animateTeleportation();
+        animateDive();
     }
 
-    function animateTeleportation() {
+    function animateDive() {
         const dt = performance.now() - t0;
         const f = easing(dt / animationDuration);
         const dx = f * (player.dest.x - player.x);
         const dy = f * (player.dest.y - player.y);
-        player.el.style.left = `${Tile.Size * ((player.x + dx + level.width) % level.width)}px`;
-        player.el.style.top = `${Tile.Size * ((player.y + dy + level.height) % level.height)}px`;
+        player.world.x = Tile.Size * (player.x + dx);
+        player.world.y = Tile.Size * (player.y + dy);
+        player.el.style.left = `${player.world.x}px`;
+        player.el.style.top = `${player.world.y}px`;
         scrollIntoView();
         if (performance.now() > t1) {
-            placePlayerAt(player.dest.x, player.dest.y);
+            placePlayerOnTile(player.dest.x, player.dest.y);
+            player.el.classList.replace('penguin-submerged', Tiles.PenguinUpright)
             player.el.classList.remove('submerged');
             player.el.style.transform = 'rotate(0rad)';
             isMoving = false;
+            checkAutoplay();
         }
         else {
-            requestAnimationFrame(animateTeleportation);
+            requestAnimationFrame(animateDive);
         }
     }
 
     function rockHit() {
         sounds.rock.play();
         standUpright();
+        checkAutoplay();
+    }
+
+    function checkAutoplay() {
+        if (state === State.Autoplay) {
+            if (autoplayIdx < autoplayMoves.length) {
+                const direction = autoplayMoves[autoplayIdx];
+                ++autoplayIdx;
+                moveTo(direction);
+            }
+            else {
+                setState(State.Playing);
+            }
+        }
     }
 
     function updateMoveCounter() {
@@ -285,17 +276,24 @@ import('./static/js/howler.core.min.js');
         const x = (player.x + Math.round(dx) + level.width) % level.width;
         const y = (player.y + Math.round(dy) + level.height) % level.height;
         if (level.data[y][x] === Tile.Coin) {
-            tiles[y][x].classList.replace('coin', 'ice');
+            level.tiles[y][x].classList.replace(XMAS ? 'present' : 'coin', 'ice');
+            delete level.collectibles[`${x},${y}`];
             level.data[y] = level.data[y].substring(0, x) + Tile.Ice + level.data[y].substring(x + 1);
-            player.score += POINTS[Tile.Coin];
-            el.levelScore.textContent = player.score;
             sounds.coin.play();
         }
-        player.el.style.left = `${Tile.Size * ((player.x + dx + level.width) % level.width)}px`;
-        player.el.style.top = `${Tile.Size * ((player.y + dy + level.height) % level.height)}px`;
+        player.world.x = Tile.Size * ((player.x + dx + level.width) % level.width);
+        player.world.y = Tile.Size * ((player.y + dy + level.height) % level.height);
+        if (player.world.x < 0 || player.world.y < 0 || player.world.x > world.width - Tile.Size || player.world.y > world.height - Tile.Size) {
+            player.el.classList.add('hidden');
+        }
+        else {
+            player.el.classList.remove('hidden');
+        }
+        player.el.style.left = `${player.world.x}px`;
+        player.el.style.top = `${player.world.y}px`;
         scrollIntoView();
         if (performance.now() > t1) {
-            placePlayerAt(player.dest.x, player.dest.y);
+            placePlayerOnTile(player.dest.x, player.dest.y);
             updateMoveCounter();
             isMoving = false;
             if (exitReached) {
@@ -330,19 +328,19 @@ import('./static/js/howler.core.min.js');
         holeEntered = level.cellAt(x + dx, y + dy) === Tile.Hole;
         let dist = Math.abs(xStep) + Math.abs(yStep);
         if (xStep > 0) {
-            player.el.classList.add('penguin-right');
+            player.el.classList.add(Tiles.PenguinRight);
             hasMoved = true;
         }
         else if (xStep < 0) {
-            player.el.classList.add('penguin-left');
+            player.el.classList.add(Tiles.PenguinLeft);
             hasMoved = true;
         }
         else if (yStep < 0) {
-            player.el.classList.add('penguin-up');
+            player.el.classList.add(Tiles.PenguinUp);
             hasMoved = true;
         }
         else if (yStep > 0) {
-            player.el.classList.add('penguin-down');
+            player.el.classList.add(Tiles.PenguinDown);
             hasMoved = true;
         }
         else if (exitReached || holeEntered) {
@@ -354,15 +352,15 @@ import('./static/js/howler.core.min.js');
             isMoving = true;
             if (exitReached || holeEntered) {
                 player.dest = { x: x + dx, y: y + dy };
-                easing = easingWithoutOvershoot;
             }
             else {
                 player.dest = { x, y };
-                easing = easingWithOvershoot;
             }
-            animationDuration = 100 * dist;
+            const animationDurationFactor = (state === State.Autoplay ? 33 : 100);
+            animationDuration = animationDurationFactor * dist;
             t0 = performance.now();
             t1 = t0 + animationDuration;
+            easing = DeceleratingEasing;
             animateRegularMove();
         }
         return hasMoved;
@@ -384,8 +382,25 @@ import('./static/js/howler.core.min.js');
         return move(+1, 0);
     }
 
+    function moveTo(direction) {
+        switch (direction.toUpperCase()) {
+            case 'U':
+                moveUp();
+                break;
+            case 'D':
+                moveDown();
+                break;
+            case 'L':
+                moveLeft();
+                break;
+            case 'R':
+                moveRight();
+                break;
+        }
+    }
+
     function onKeyPressed(e) {
-        if (!isMoving && (e.ctrlKey || e.metaKey) && e.key === 'r') {
+        if (!DEBUG && !isMoving && (e.ctrlKey || e.metaKey) && e.key === 'r') {
             e.preventDefault();
             e.stopPropagation();
             resetLevel();
@@ -426,6 +441,8 @@ import('./static/js/howler.core.min.js');
                 }
                 break;
             case State.Playing:
+            // fall-through
+            case State.Autoplay:
                 if (isMoving)
                     return;
                 let move;
@@ -505,15 +522,16 @@ import('./static/js/howler.core.min.js');
         const scene = document.createElement('div');
         scene.style.gridTemplateColumns = `repeat(${level.width}, ${Tile.Size}px)`;
         scene.style.gridTemplateRows = `repeat(${level.height}, ${Tile.Size}px)`;
-        holes = [];
-        tiles = [];
+        level.tiles = [];
+        level.collectibles = {};
         for (let y = 0; y < level.data.length; ++y) {
             const row = level.data[y];
-            tiles.push([]);
+            level.tiles.push([]);
             for (let x = 0; x < row.length; ++x) {
                 const item = row[x];
                 const tile = document.createElement('span');
                 tile.className = 'tile';
+                tile.setAttribute('title', `${x},${y}`)
                 switch (item) {
                     case Tile.Rock:
                         tile.classList.add('rock');
@@ -522,20 +540,24 @@ import('./static/js/howler.core.min.js');
                         tile.classList.add('empty');
                         break;
                     case Tile.Coin:
-                        tile.classList.add('coin');
+                        tile.classList.add(XMAS ? 'present' : 'coin');
+                        level.collectibles[`${x},${y}`] = item;
                         break;
                     case Tile.Gold:
                         tile.classList.add('gold');
+                        level.collectibles[`${x},${y}`] = item;
                         break;
                     case Tile.Flower:
                         tile.classList.add('flower');
+                        break;
+                    case Tile.Tree:
+                        tile.classList.add('snowy-tree');
                         break;
                     case Tile.Exit:
                         tile.classList.add('exit');
                         break;
                     case Tile.Hole:
                         tile.classList.add('hole');
-                        holes.push({ x, y });
                         break;
                     case Tile.Player:
                         placePlayerAt(x, y);
@@ -546,7 +568,7 @@ import('./static/js/howler.core.min.js');
                         break;
                 }
                 scene.appendChild(tile);
-                tiles[y].push(tile);
+                level.tiles[y].push(tile);
             }
         }
         return scene;
@@ -622,12 +644,16 @@ import('./static/js/howler.core.min.js');
         showOverlay();
     }
 
-    /**
-     * @return  true, if level has collectibles, false otherwise
-     */
-    function levelHasCollectibles() {
-        return level.origData.some(row => row.match('[\$G]'));
-    }
+    // function hasCollectibles(level) {
+    //     return level.some(row => row.match('[\$G]'));
+    // }
+
+    // /**
+    //  * @return  true, if level has collectibles, false otherwise
+    //  */
+    // function levelHasCollectibles() {
+    //     return hasCollectibles(level.origData);
+    // }
 
     function setLevel(levelData) {
         level.data = [...levelData.data];
@@ -635,6 +661,8 @@ import('./static/js/howler.core.min.js');
         level.origData = [...levelData.data];
         level.width = level.data[0].length;
         level.height = level.data.length;
+        world.width = Tile.Size * level.width;
+        world.height = Tile.Size * level.height;
         if (level.connections instanceof Array) {
             for (const conn of level.connections) {
                 console.assert(level.cellAt(conn.src.x, conn.src.y) === Tile.Hole);
@@ -649,6 +677,7 @@ import('./static/js/howler.core.min.js');
         el.game.replaceChildren(el.scene, player.el);
         replacePlayerWithIceTile();
         // el.findRouteButton.disabled = !levelHasCollectibles();
+        scrollIntoView();
     }
 
     function restoreState() {
@@ -671,6 +700,14 @@ import('./static/js/howler.core.min.js');
         el.overlayBox.replaceChildren();
     }
 
+    function autoplay() {
+        if (el.path.value.length === 0)
+            return;
+        restartGame();
+        autoplayIdx = 0;
+        setState(State.Autoplay);
+        moveTo(el.path.value[0]);
+    }
     function play() {
         el.overlayBox.removeEventListener('click', play);
         setState(State.Playing);
@@ -729,17 +766,24 @@ import('./static/js/howler.core.min.js');
         const settings = el.settingsTemplate.content.cloneNode(true);
         const lvlList = settings.querySelector('.level-list');
         const padding = 1 + Math.floor(Math.log10(LEVELS.length));
-        for (let i = 0; i < maxLevelNum(); ++i) {
+        const highestAccessibleLevelNum = maxLevelNum();
+        let i = 0;
+        for (const level of LEVELS) {
+            const lvlName = level.name || '<?>';
             const div = document.createElement('div');
-            const lvlName = LEVELS[i].name
-                ? LEVELS[i].name
-                : '<?>';
             div.textContent = `Level ${(i + 1).toString().padStart(padding, ' ')}: ${lvlName}`;
-            div.addEventListener('click', () => {
-                removeOverlay();
-                gotoLevel(i);
-            });
+            div.setAttribute('data-level-idx', i);
+            if (i < highestAccessibleLevelNum) {
+                div.addEventListener('click', e => {
+                    removeOverlay();
+                    gotoLevel(e.target.getAttribute('data-level-idx') | 0);
+                });
+            }
+            else {
+                div.classList.add('locked');
+            }
             lvlList.appendChild(div);
+            ++i;
         }
         el.overlayBox.replaceChildren(settings);
         showOverlay();
@@ -814,7 +858,7 @@ import('./static/js/howler.core.min.js');
         LEVELS = JSON.parse(document.querySelector('#levels').textContent);
         el.game = document.querySelector('#game');
         el.game.addEventListener('click', onClick);
-        // el.gameContainer = document.querySelector('#game-container');
+        el.extraStyles = document.querySelector('#extra-styles');
         el.totalScore = document.querySelector('#total-score');
         el.levelScore = document.querySelector('#level-score');
         el.levelNum = document.querySelector('#level-num');
@@ -827,21 +871,21 @@ import('./static/js/howler.core.min.js');
         el.chooseLevel.addEventListener('click', showSettingsScreen);
         el.loudspeaker = document.querySelector('#loudspeaker');
         el.loudspeaker.addEventListener('click', checkAudio);
-        // el.findRouteButton = document.querySelector('#find-route');
-        // el.findRouteButton.addEventListener('click', findRoute);
+        el.autoplayButton = document.querySelector('#autoplay');
+        el.autoplayButton.addEventListener('click', autoplay);
         document.querySelector('#restart-level').addEventListener('click', resetLevel);
         document.querySelector('#help').addEventListener('click', help);
-        // el.bfsButton = document.querySelector('#bfs');
-        // el.bfsButton.addEventListener('click', bfsAnimate);
         el.splashTemplate = document.querySelector("#splash");
         el.congratsTemplate = document.querySelector("#congrats");
         el.settingsTemplate = document.querySelector("#settings");
         player.el = document.createElement('span');
-        player.el.className = 'tile penguin';
+        player.el.className = `tile penguin ${Tiles.PenguinUpright}`;
         setupAudio();
-        window.addEventListener("beforeunload", onBeforeUnload, { capture: true });
+        if (!DEBUG)
+            window.addEventListener("beforeunload", onBeforeUnload, { capture: true });
         window.addEventListener('keydown', onKeyPressed);
         window.addEventListener('keypress', onKeyPressed);
+        window.addEventListener('resize', onResize);
         document.querySelector('.interactive.arrow-up').addEventListener('click', () => {
             window.dispatchEvent(new KeyboardEvent('keypress', { 'key': 'w' }));
         });
@@ -857,6 +901,7 @@ import('./static/js/howler.core.min.js');
         restartGame();
         showSplashScreen();
         document.querySelector('#controls').classList.remove('hidden');
+        window.dispatchEvent(new Event('resize'));
     }
     window.addEventListener('load', main);
 })(window);

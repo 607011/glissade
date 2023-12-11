@@ -1,242 +1,31 @@
 /* Copyright (c) 2023 Oliver Lau <oliver@ersatzworld.net> */
 
-class Tile {
-    static Size = 32;
-    static Empty = ' ';
-    static Ice = ' ';
-    static Marker = '.';
-    static Rock = '#';
-    static Flower = 'Y';
-    static Exit = 'X';
-    static Player = 'P';
-    static Coin = '$';
-    static Gold = 'G';
-    static Hole = 'O';
-};
-
-function* allPermutations(arr) {
-    const c = new Array(arr.length).fill(0);
-    let i = 1;
-    while (i < arr.length) {
-        if (c[i] < i) {
-            yield [...arr];
-            const k = i % 2 && c[i];
-            [arr[i], arr[k]] = [arr[k], arr[i]];
-            ++c[i];
-            i = 1;
-        }
-        else {
-            c[i] = 0;
-            ++i;
-        }
-    }
-}
+import('./queue.js');
+import('./graph.js')
 
 
-class GraphNode {
-    #id;
-    #x;
-    #y;
-    #explored;
-    #parent;
-    #neighbors;
-    #edges;
-    #index;
-
-    constructor(id, x, y, explored = false) {
-        this.#id = id;
-        this.#x = x;
-        this.#y = y;
-        this.#explored = explored;
-        this.#parent = null;
-        this.#neighbors = undefined;
-        this.#edges = [];
-        this.#index = undefined;
-    }
-    equals(other) {
-        return this.#x === other.x && this.#y === other.y;
-    }
-    get neighbors() {
-        return this.#neighbors;
-    }
-    set neighbors(n) {
-        this.#neighbors = n;
-    }
-    get edges() {
-        return this.#edges;
-    }
-    set edges(e) {
-        this.#edges = e;
-    }
-    get index() {
-        return this.#index;
-    }
-    set index(index) {
-        this.#index = index;
-    }
-    set explored(explored) {
-        this.#explored = explored;
-    }
-    get explored() {
-        return this.#explored;
-    }
-    get x() {
-        return this.#x;
-    }
-    get y() {
-        return this.#y;
-    }
-    get id() {
-        return this.#id;
-    }
-    set parent(node) {
-        this.#parent = node;
-    }
-    get parent() {
-        return this.#parent;
-    }
-    hasParent() {
-        return this.#parent !== null;
-    }
-    isHole() {
-        return this.#id === Tile.Hole;
-    }
-    isStart() {
-        return this.#id === Tile.Player;
-    }
-    isExit() {
-        return this.#id === Tile.Exit;
-    }
-    isCollectible() {
-        return this.#id === Tile.Coin || this.#id === Tile.Gold;
-    }
-}
-
-
-class FIFOQueue {
-    _data;
-    constructor(data = []) {
-        console.assert(data instanceof Array);
-        this._data = data;
-    }
-    enqueue(item) {
-        this._data.push(item);
-    }
-    dequeue() {
-        if (this.isEmpty())
-            throw new Error('Queue underflow');
-        return this._data.shift();
-    }
-    front() {
-        if (this.isEmpty())
-            throw new Error('Queue underflow');
-        return this._data[0];
-    }
-    back() {
-        if (this.isEmpty())
-            throw new Error('Queue underflow');
-        return this._data[this._data.length - 1];
-    }
-    get data() {
-        return this._data;
-    }
-    get length() {
-        return this._data.length;
-    }
-    isEmpty() {
-        return this.length === 0;
-    }
-    isNotEmpty() {
-        return this.length > 0;
-    }
-}
-
-class PriorityQueue extends FIFOQueue {
-    constructor(data) {
-        super(data);
-    }
-
-    enqueue(element) {
-        let contained = false;
-        for (let i = 0; i < this._data.length; ++i) {
-            if (this._data[i].cost > element.cost) {
-                this._data.splice(i, 0, element);
-                contained = true;
-                break;
-            }
-        }
-        if (!contained) {
-            this._data.push(element);
-        }
-    }
-}
-
-class GraphEdge {
-    #U;
-    #V;
-    #weight;
-    #move;
-
-    constructor(U, V, weight, move) {
-        this.#U = U;
-        this.#V = V;
-        this.#weight = weight;
-        this.#move = move;
-    }
-
-    get U() {
-        return this.#U;
-    }
-
-    get V() {
-        return this.#V;
-    }
-
-    get weight() {
-        return this.#weight;
-    }
-
-    get move() {
-        return this.#move;
-    }
-}
-
-
-class NodeSet {
-    #data;
-    constructor() {
-        this.#data = {};
-    }
-
-    contains(node) {
-        typeof this.#data[`${node.x},${node.y}`] !== 'undefined';
-    }
-
-    add(node) {
-        if (!this.contains(node)) {
-            this.#data[`${node.x},${node.y}`] = node;
-        }
-    }
+// JavaScript's Set is such a shitty implementation of sets :-/
+function setsAreEqual(A, B) {
+    return A.size === B.size && [...A].every(x => B.has(x));
 }
 
 class ChillySolver {
-
-    static DIRECTIONS = [
-        { x: 0, y: -1, move: 'U' },
-        { x: 0, y: +1, move: 'D' },
-        { x: -1, y: 0, move: 'L' },
-        { x: +1, y: 0, move: 'R' }
-    ];
+    static DIRECTIONS = {
+        U: { x: 0, y: -1, move: 'U' },
+        D: { x: 0, y: +1, move: 'D' },
+        L: { x: -1, y: 0, move: 'L' },
+        R: { x: +1, y: 0, move: 'R' },
+    };
 
     #levelData;
     #levelWidth;
     #levelHeight;
     #connections;
     #collectibles;
-    #rootNode;
-    #nodeCache;
-    #edgeCache;
-    #distanceMatrix;
+    #startNode;
+    #exitNode;
+    #nodes;
+    #accessibleNodes;
 
     /**
      * @param {Array} levelData
@@ -246,114 +35,37 @@ class ChillySolver {
         this.#levelData = [...level.data];
         this.#levelHeight = this.#levelData.length;
         this.#levelWidth = this.#levelData[0].length;
-        this.#collectibles = [];
-        this.#rootNode = null;
-        this.#nodeCache = {};
-        this.#edgeCache = {};
-        this.#distanceMatrix = [];
+        this.#collectibles = {};
+        this.#startNode = null;
+        this.#exitNode = null;
+        this.#nodes = {};
+        this.#accessibleNodes = {};
+
         for (let y = 0; y < this.#levelHeight; ++y) {
             const row = this.row(y);
             for (let x = 0; x < this.#levelWidth; ++x) {
-                switch (row[x]) {
+                const id = row[x];
+                this.#nodes[`${x},${y}`] = new GraphNode(id, x, y);
+                switch (id) {
                     case Tile.Player:
                         this.#levelData[y] = row.replace(Tile.Player, Tile.Ice);
-                        this.#rootNode = new GraphNode(Tile.Player, x, y, true);
+                        this.#startNode = this.#nodes[`${x},${y}`];
+                        break;
+                    case Tile.Exit:
+                        this.#exitNode = this.#nodes[`${x},${y}`];
                         break;
                     case Tile.Coin:
                     // fall-through
                     case Tile.Gold:
-                        this.#collectibles.push({ x, y });
+                        this.#collectibles[`${x},${y}`] = this.#nodes[`${x},${y}`];
                         break;
                     default:
                         break;
                 }
             }
         }
-    }
 
-    row(y) {
-        return this.#levelData[(y + this.#levelHeight) % this.#levelHeight];
-    }
-
-    cellAt(x, y) {
-        return this.#levelData[(y + this.#levelHeight) % this.#levelHeight][(x + this.#levelWidth) % this.#levelWidth];
-    }
-
-    get nodeCount() {
-        return Object.keys(this.#nodeCache).length;
-    }
-
-    get edges() {
-        return this.#edgeCache;
-    }
-
-    /**
-     * 
-     * @param {number} id 
-     * @param {number} x 
-     * @param {number} y 
-     * @param {boolean} explored 
-     * @returns GraphNode
-     */
-    #addToNodeCache(id, x, y, explored = false) {
-        const node = new GraphNode(id, x, y, explored);
-        this.#nodeCache[`${x},${y}`] = node;
-        return node;
-    }
-
-    /**
-     * 
-     * @param {number} id 
-     * @param {number} x 
-     * @param {number} y 
-     * @param {boolean} explored 
-     * @returns GraphNode
-     */
-    #getCachedNode(id, x, y, explored = false) {
-        x = (x + this.#levelWidth) % this.#levelWidth;
-        y = (y + this.#levelHeight) % this.#levelHeight;
-        let node = this.#nodeCache[`${x},${y}`];
-        if (!node) {
-            node = this.#addToNodeCache(id, x, y, explored);
-        }
-        return node;
-    }
-
-    /**
-     * 
-     * @param {GraphNode} U 
-     * @param {GraphNode} V 
-     * @param {number} weight 
-     * @returns GraphEdge
-     */
-    #addToEdgeCache(U, V, weight) {
-        const edge = new GraphEdge(U, V, weight);
-        this.#edgeCache[`${U.x},${U.y} ${V.x},${V.y}`] = edge;
-        return edge;
-    }
-
-    /**
-     * 
-     * @param {GraphNode} U 
-     * @param {GraphNode} V 
-     * @returns GraphEdge
-     */
-    #getEdge(U, V) {
-        return this.#edgeCache[`${U.x},${U.y} ${V.x},${V.y}`];
-    }
-
-    /**
-     * 
-     * @param {GraphNode} U 
-     * @param {GraphNode} V
-     * @returns GraphEdge
-     */
-    #cacheEdge(U, V, weight) {
-        let edge = this.#getEdge(U, V);
-        if (!edge) {
-            edge = this.#addToEdgeCache(U, V, weight);
-        }
-        return edge;
+        this.#accessibleNodes = this.findAccessibleNodes();
     }
 
     #norm_x(x) {
@@ -364,320 +76,181 @@ class ChillySolver {
         return (y + this.#levelHeight) % this.#levelHeight;
     }
 
+    row(y) {
+        return this.#levelData[this.#norm_y(y)];
+    }
+
+    get levelData() {
+        return this.#levelData;
+    }
+
+    get start() {
+        return this.#startNode;
+    }
+
+    get exit() {
+        return this.#exitNode;
+    }
+
+    collectibleAt(x, y) {
+        return this.#collectibles[`${this.#norm_x(x)},${this.#norm_y(y)}`];
+    }
+
+    cellAt(x, y) {
+        return this.#levelData[this.#norm_y(y)][this.#norm_x(x)];
+    }
+
+    nodeAt(x, y) {
+        return this.#nodes[`${this.#norm_x(x)},${this.#norm_y(y)}`];
+    }
+
+    hasCollectibles() {
+        return Object.keys(this.#collectibles).length > 0;
+    }
+
+    get nodeCount() {
+        return Object.keys(this.#nodes).length;
+    }
+
+    get allNodes() {
+        return this.#nodes;
+    }
+
+    get accessibleNodes() {
+        return this.#accessibleNodes;
+    }
+
     /**
      * 
-     * @param {GraphNode} source 
+     * @param {GraphNode} currentNode 
      * @returns Generator<{ move: string; node: GraphNode; } void, unknown>
      */
-    *neighborsOf(source) {
+    *neighborsOf(currentNode) {
+        // TODO: cache already explored neighbors
+
         // iterate over all neighbors of the current node
-        for (const d of ChillySolver.DIRECTIONS) {
-            let { x, y } = source;
+        for (const [move, d] of Object.entries(ChillySolver.DIRECTIONS)) {
+            // console.debug(`    Trying to go ${move} from ${currentNode.x},${currentNode.y}...`)
+            let { x, y } = currentNode;
             const dx = d.x;
             const dy = d.y;
-            const move = d.move;
             let xStep = 0;
             let yStep = 0;
-            let prevNode = source;
+            let collected = new Set();
             try {
                 while ([Tile.Ice, Tile.Coin, Tile.Gold, Tile.Marker, Tile.Flower, Tile.Empty].includes(this.cellAt(x + dx, y + dy))) {
                     x += dx;
                     y += dy;
                     if ([Tile.Coin, Tile.Gold].includes(this.cellAt(x, y))) {
-                        const collectible = this.#getCachedNode(this.cellAt(x, y), x, y);
-                        yield { move, node: collectible };
-                        const nextTile = this.cellAt(x + dx, y + dy);
-                        this.#cacheEdge(prevNode, collectible, nextTile === Tile.Rock ? 1 : 0);
-                        prevNode = collectible;
+                        collected.add(this.collectibleAt(x, y));
                     }
                     xStep += dx;
                     yStep += dy;
                     if (Math.abs(xStep) > this.#levelWidth || Math.abs(yStep) > this.#levelHeight)
                         return;
-                }    
+                }
             }
             catch (e) {
-                if (e instanceof TypeError) {
+                if (e instanceof TypeError)
                     throw new Error(`Probable loop detected in level while inspecting neighborhood of tile at ${this.#norm_x(x)}, ${this.#norm_y(y)}.`);
-                }
                 return;
             }
             const stopTile = this.cellAt(x + dx, y + dy);
             let node = null;
             switch (stopTile) {
                 case Tile.Exit:
-                    node = this.#getCachedNode(Tile.Exit, x + dx, y + dy);
+                    node = this.nodeAt(x + dx, y + dy);
                     break;
                 case Tile.Hole:
                     const otherHole = this.#connections.find(conn => conn.src.x === this.#norm_x(x + dx) && conn.src.y === this.#norm_y(y + dy)).dst;
-                    node = this.#getCachedNode(Tile.Hole, otherHole.x, otherHole.y, false);
+                    node = this.nodeAt(otherHole.x, otherHole.y);
                     break;
                 default:
-                    if (x !== source.x || y !== source.y) {
-                        node = this.#getCachedNode(this.cellAt(x, y), x, y, false);
+                    if (x !== currentNode.x || y !== currentNode.y) {
+                        node = this.nodeAt(x, y);
                     };
                     break;
             }
             if (node !== null) {
-                if (!node.isCollectible()) {
-                    this.#cacheEdge(prevNode, node, 1);
-                }
-                yield { move, node };
+                yield { move, node, collected };
             }
         }
     }
 
-
-    /**
-     * 
-     * @param {GraphNode} source 
-     * @returns [GraphEdge]
-     */
-    #edgesFrom(source) {
-        let edges = [];
-        for (const d of ChillySolver.DIRECTIONS) {
-            let { x, y } = source;
-            const dx = d.x;
-            const dy = d.y;
-            const move = d.move;
-            let xStep = 0;
-            let yStep = 0;
-            let prevNode = source;
-            while ([Tile.Ice, Tile.Coin, Tile.Gold, Tile.Flower, Tile.Marker, Tile.Empty].includes(this.cellAt(x + dx, y + dy))) {
-                x += dx;
-                y += dy;
-                if ([Tile.Coin, Tile.Gold].includes(this.cellAt(x, y))) {
-                    const collectible = this.#getCachedNode(this.cellAt(x, y), x, y);
-                    edges.push(new GraphEdge(prevNode, collectible, nextTile === Tile.Rock ? 1 : 0));
-                    // TODO: slide on until stop
-                    const nextTile = this.cellAt(x + dx, y + dy);
-                    prevNode = collectible;
-                }
-                xStep += dx;
-                yStep += dy;
-                if (Math.abs(xStep) > this.#levelWidth || Math.abs(yStep) > this.#levelHeight)
-                    return;
-            }
-            const stopTile = this.cellAt(x + dx, y + dy);
-            let node = null;
-            switch (stopTile) {
-                case Tile.Exit:
-                    node = this.#getCachedNode(Tile.Exit, x + dx, y + dy);
-                    break;
-                case Tile.Hole:
-                    const otherHole = this.#connections.find(conn => conn.src.x === (x + dx) && conn.src.y === (y + dy));
-                    node = this.#getCachedNode(Tile.Hole, otherHole.dst.x, otherHole.dst.y, false);
-                    break;
-                default:
-                    if (x !== source.x || y !== source.y) {
-                        node = this.#getCachedNode(this.cellAt(x, y), x, y, false);
-                    };
-                    break;
-            }
-            if (node !== null) {
-                edges.push(new GraphEdge(prevNode, node, 1, move));
-            }
-        }
-        return edges;
-    }
-
-
-    static MaxBacktracerSteps = 20;
-    static backTrace(node, startNode) {
-        let iterations = 0;
-        let path = [];
-        while (node !== startNode && (++iterations < 10_000)) {
-            if (node !== null) {
-                path.unshift(node);
-            }
-            else {
-                break;
-            }
-            node = node.parent;
-        }
-        return path;
-    }
-
-    buildGraph() {
-        if (this.#rootNode === null)
-            return;
-        this.#nodeCache = { [`${this.#rootNode.x},${this.#rootNode.y}`]: this.#rootNode };
-
-        // TODO !!!
-    }
-
-    /**
-     * Find all fields in game that can be visited or contain a collectible item.
-     * 
-     * This is done by a depth-first traversal.
-     * 
-     * @returns Array of `GraphNode`s
-     */
-    findNodes() {
-        if (this.#rootNode === null)
-            return;
-
-        this.#nodeCache = { [`${this.#rootNode.x},${this.#rootNode.y}`]: this.#rootNode };
-
-        const DFS_explore = function (currentNode) {
-            if (!currentNode.neighbors) {
-                currentNode.neighbors = [...this.neighborsOf(currentNode)];
-            }
-            if (currentNode.neighbors.length === 0 || currentNode.neighbors.every(node => node.explored)) {
-                return;
-            }
-            for (const adjacent of currentNode.neighbors) {
-                if (!adjacent.node.explored && !adjacent.node.isExit()) {
-                    adjacent.node.explored = true;
-                    DFS_explore(adjacent.node);
-                }
-            }
-        }.bind(this);
-
-        DFS_explore(this.#rootNode);
-
-        return Object.values(this.#nodeCache);
-    }
-
-    solveAB(a, b) {
-        if (a === b)
-            return null;
-
-        a = new GraphNode(a.id, a.x, a.y, true);
-        b = new GraphNode(b.id, b.x, b.y, false);
-
-        this.#nodeCache = { [`${a.x},${a.y}`]: a };
-        // console.debug(`solveAB(${a.x},${a.y} -> ${b.x},${b.y})`);
-        const q = new FIFOQueue([a]);
-        while (q.isNotEmpty()) {
-            const currentNode = q.dequeue();
-            if (!currentNode.neighbors) {
-                currentNode.neighbors = [...this.neighborsOf(currentNode)];
-                //console.debug(currentNode.neighbors);
-            }
-            for (const adjacent of currentNode.neighbors) {
-                if (adjacent.node.equals(b)) {
-                    adjacent.node.parent = currentNode;
-                    adjacent.node.move = adjacent.move;
-                    return adjacent.node;
-                }
-                if (!adjacent.node.explored) {
-                    adjacent.node.parent = currentNode;
-                    adjacent.node.move = adjacent.move;
-                    adjacent.node.explored = true;
-                    q.enqueue(adjacent.node);
-                }
-            }
-        }
-        return null;
-    }
-
-    #nodesWithIndex() {
-        const nodes = Object.values(this.#nodeCache);
-        for (let i = 0; i < nodes.length; ++i) {
-            nodes[i].index = i;
-        }
-        return nodes;
-    }
-
-    async dijkstra2D() {
-        if (this.#rootNode === null)
-            return;
-
-        const [nodes, startIdx, finishIdx] = await this.calcDistanceMatrix();
-        console.debug(this.#distanceMatrix);
-
-        let source = nodes[startIdx]; //nodes.find(node => node.isStart());
-        let destination = nodes[finishIdx]; // nodes.find(node => node.isExit());
-        let prev = [...Array(nodes.length).fill(null)];
-        let mustVisitNodes = nodes.filter(node => node.isCollectible());
-
-        console.debug('source =', source);
-        console.debug('destination =', destination);
-        console.debug('mustVisitNodes =', mustVisitNodes);
-
-        let q = new PriorityQueue;
-        q.enqueue({
-            node: source,
-            cost: 0,
-            bitmask: 0,
-        });
-        let distance = [...Array(nodes.length)].map(_ => Array(1 << mustVisitNodes.length).fill(Number.POSITIVE_INFINITY));
-        distance[source.index][0] = 0;
-        while (q.isNotEmpty()) {
-            const u = q.dequeue();
-            if (!u.node.neighbors) {
-                continue;
-            }
-            if (u.cost !== distance[u.node.index][u.bitmask])
-                continue;
-            for (const v of u.node.neighbors) {
-                let newBitmask = u.bitmask;
-                const vid = mustVisitNodes.findIndex(node => node === v.node);
-                if (vid >= 0) {
-                    newBitmask = u.bitmask | (1 << vid);
-                }
-                const newEdgeCost = this.#distanceMatrix[u.node.index][v.node.index];
-                console.debug(`${u.node.x},${u.node.y} ${v.node.x},${v.node.y} => ${newEdgeCost}`);
-                const newCost = u.cost + newEdgeCost;
-                if (newCost < distance[v.node.index][newBitmask]) {
-                    distance[v.node.index][newBitmask] = newCost;
-                    prev[v.node.index] = u.node;
-                }
-                q.enqueue({
-                    node: v.node,
-                    cost: newCost,
-                    bitmask: newBitmask,
-                });
-            }
-        }
-
-        console.debug(distance[destination.index]);
-
-        console.debug(prev);
-
-        // construct route from predecessor array
-        let u = destination;
-        let route = [];
-        let iterations = 0;
-        while (u !== null) {
-            route.unshift(u);
-            console.log(u.index);
-            u = prev[u.index];
-            if (iterations++ > prev.length) {
-                console.debug(route);
-                throw new Error('Too many iterations');
-            }
-        }
-        return [source, destination, route];
-    }
-
-    async shortestPath(callback) {
-        if (this.#rootNode === null)
+    async shortestPathAlongCollectibles(callback) {
+        if (this.#startNode === null)
             return [null, 0];
 
-        this.#nodeCache = { [`${this.#rootNode.x},${this.#rootNode.y}`]: this.#rootNode };
-
-        const q = new FIFOQueue([this.#rootNode]);
+        const q = new FIFOQueue([this.#startNode]);
         let iterations = 0;
         if (typeof callback === 'function') {
-            await callback(this.#rootNode, undefined, null);
+            await callback(this.#startNode, undefined, null);
+        }
+
+        this.#startNode.toCollect = { ...this.#collectibles };
+
+        console.debug(this.#startNode.toCollect)
+
+        while (q.isNotEmpty()) {
+            const currentNode = q.dequeue();
+            // console.debug(`CURRENT NODE @ ${currentNode.x},${currentNode.y}`);
+            if (currentNode.toCollect.size === 0) {
+                return [currentNode, iterations];
+            }
+            // for (const adjacent of this.neighborsOf(currentNode)) {
+            for (const adjacent of currentNode.neighbors) {
+                ++iterations;
+                if (setsAreEqual(currentNode.toCollect, adjacent.node.toCollect)) {
+                    adjacent.node.clearMoves();
+                    continue;
+                }
+                // don't go to exit if there are items left to collect
+                if (adjacent.node.isExit() && currentNode.toCollect.size > 0)
+                    continue;
+                // console.debug(`    Going ${adjacent.move}, collecting `, adjacent.collected);
+                adjacent.node.toCollect = { ... currentNode.toCollect };
+                for (const collectible of adjacent.collected) {
+                    adjacent.node.toCollect.delete(collectible);
+                    // console.debug(`       Removing ${collectible.id} @ ${collectible.x},${collectible.y}, to-do:`, adjacent.node.toCollect)
+                }
+                adjacent.node.addMove(currentNode, adjacent.move);
+                // console.debug(`    Enqueueing ${adjacent.node.x},${adjacent.node.y}`)
+                q.enqueue(adjacent.node);
+                if (typeof callback === 'function') {
+                    await callback(adjacent.node, adjacent.move, currentNode);
+                }
+            }
+        }
+        return [null, iterations];
+    }
+
+
+    async shortestPathAB(A, B, callback) {
+        if (A === null || B === null)
+            return [null, 0];
+
+        this.unexploreAll();
+
+        const q = new FIFOQueue([A]);
+        A.explored = true;
+        let iterations = 0;
+        if (typeof callback === 'function') {
+            await callback(A, undefined, null);
         }
         while (q.isNotEmpty()) {
             const currentNode = q.dequeue();
-            for (const adjacent of this.neighborsOf(currentNode)) {
+            // for (const adjacent of this.neighborsOf(currentNode)) {
+            for (const adjacent of currentNode.neighbors) {
                 ++iterations;
                 if (typeof callback === 'function') {
                     await callback(adjacent.node, adjacent.move, currentNode);
                 }
-                if (adjacent.node.isExit()) {
-                    adjacent.node.parent = currentNode;
-                    adjacent.node.move = adjacent.move;
+                if (adjacent.node === B) {
+                    adjacent.node.addMove(currentNode, adjacent.move);
                     return [adjacent.node, iterations];
                 }
                 if (!adjacent.node.explored) {
-                    adjacent.node.parent = currentNode;
-                    adjacent.node.move = adjacent.move;
+                    adjacent.node.addMove(currentNode, adjacent.move);
                     adjacent.node.explored = true;
                     q.enqueue(adjacent.node);
                 }
@@ -687,42 +260,51 @@ class ChillySolver {
     }
 
 
-
-    async calcDistanceMatrix() {
-        const nodes = this.#nodesWithIndex();
-        const N = nodes.length;
-        this.#distanceMatrix = [...Array(N + 1)].map(e => Array(N + 1).fill(Number.POSITIVE_INFINITY));
-
-        // TODO: add dummy node with 0 distance to start and finish and infinite distance to all other nodes
-        const startIdx = nodes.findIndex(tile => tile.id === Tile.Player);
-        const finishIdx = nodes.findIndex(tile => tile.id === Tile.Exit);
-        this.#distanceMatrix[startIdx][N] = 0;
-        this.#distanceMatrix[finishIdx][N] = 0;
-        this.#distanceMatrix[N][startIdx] = 0;
-        this.#distanceMatrix[N][finishIdx] = 0;
-        for (let i = 0; i < N; ++i) {
-            const a = nodes[i];
-            for (let j = 0; j < N; ++j) {
-                if (i === j) {
-                    this.#distanceMatrix[i][j] = 0;
-                    continue;
-                }
-                const b = nodes[j];
-                // console.debug(`solve(${a.x},${a.y} -> ${b.x},${b.y})`);
-                const solver = new ChillySolver([...this.#levelData]);
-                const dstNode = solver.solveAB(a, b);
-                if (dstNode && dstNode.equals(b)) {
-                    const path = ChillySolver.backTrace(dstNode, a);
-                    // TODO: only add path if collectibles are collected along the path
-                    console.debug(i, j, `from ${a.x},${a.y} to ${b.x},${b.y}`, path);
-                    if (path.length > 1) {
-                        this.#distanceMatrix[i][j] = path.length - 1;
-                    }
-                }
-            }
-        }
-        return [nodes, startIdx, finishIdx];
+    async shortestPath(callback) {
+        return await this.shortestPathAB(this.#startNode, this.#exitNode, callback);
     }
 
-};
+    unexploreAll() {
+        Object.values(this.#nodes).forEach(entry => {
+            entry.explored = false;
+            entry.clearMoves();
+        });
+    }
 
+    /**
+     * Find all fields in game that can be visited or contain a collectible item.
+     * 
+     * This is done by a depth-first traversal.
+     * 
+     * @returns Array of `GraphNode`s
+     */
+    findAccessibleNodes() {
+        if (this.#startNode === null)
+            return;
+
+        this.unexploreAll();
+
+        let nodes = [];
+
+        const DFS_explore = function (currentNode) {
+            if (!currentNode.hasNeighbors()) {
+                currentNode.neighbors = [...this.neighborsOf(currentNode)];
+            }
+            if (!currentNode.hasNeighbors() || currentNode.neighbors.every(node => node.explored)) {
+                return;
+            }
+            for (const adjacent of currentNode.neighbors) {
+                if (!adjacent.node.explored && !adjacent.node.isExit()) {
+                    adjacent.node.explored = true;
+                    nodes.push(adjacent.node);
+                    DFS_explore(adjacent.node);
+                }
+            }
+        }.bind(this);
+
+        DFS_explore(this.#startNode);
+
+        return nodes;
+    }
+
+}

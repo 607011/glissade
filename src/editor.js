@@ -20,6 +20,7 @@
     SOFTWARE.
 */
 
+import("./graph.js");
 import("./chilly.js");
 
 (function (window) {
@@ -67,6 +68,8 @@ import("./chilly.js");
     let width;
     let height;
     let hole1;
+    let A = null, B = null;
+    let currentPos;
     let connectionLine;
     let selectedConnectionLine = null;
     function cellAt(x, y) {
@@ -79,6 +82,61 @@ import("./chilly.js");
         selectedItem = item;
         localStorage.setItem(STORAGE_KEY_ITEM, item);
     }
+
+    async function solveAB(A, B) {
+        el.game.querySelectorAll('.hint').forEach(el => el.remove());
+        console.debug('solveToHere()')
+        const solver = new ChillySolver({
+            data: level.data,
+            connections: level.connectionData()
+        });
+        let solverResult;
+        el.message.textContent = '';
+        try {
+            const sourceNode = solver.nodeAt(A.x, A.y);
+            const targetNode = solver.nodeAt(B.x, B.y);
+            solverResult = await solver.shortestPathAB(sourceNode, targetNode);
+        }
+        catch (e) {
+            el.path.textContent = e.message;
+        }
+        if (!solverResult) {
+            el.message.textContent = '<unsolvable>';
+            el.path.textContent = '';
+            return;
+        }
+        let [node, _iterations] = solverResult;
+        if (node === null) {
+            el.message.textContent = '<no solutions>';
+            el.path.textContent = '';
+            return;
+        }
+        // backtrace path from destination node
+        let path = [node];
+
+        while (node.hasMoves() && !node.isStart()) {
+            const move = node.nextMove();
+            node = move.parent;
+            path.unshift(move);
+        }
+
+        console.debug(path)
+
+        const moves = [];
+        const HINT_NAMES = { 'U': 'hint-up', 'R': 'hint-right', 'D': 'hint-down', 'L': 'hint-left' };
+        for (const move of path) {
+            moves.push(node.move);
+            if (move.parent) {
+                const { x, y } = move.parent;
+                const hint = document.createElement('div');
+                hint.className = `tile hint ${HINT_NAMES[move.move]}`;
+                el.game.querySelector(`[data-coord="${x}-${y}"]`).appendChild(hint);
+            }
+        }
+
+        return path;
+    }
+
     async function solve() {
         el.game.querySelectorAll('.hint').forEach(el => el.remove());
         const solver = new ChillySolver({
@@ -106,21 +164,23 @@ import("./chilly.js");
         }
         // backtrace path from destination node
         let path = [node];
-        while (node.hasParent()) {
-            node = node.parent;
-            path.unshift(node);
+
+        while (node.hasMoves() && !node.isStart()) {
+            const move = node.nextMove();
+            node = move.parent;
+            path.unshift(move);
         }
+
         const moves = [];
         const HINT_NAMES = { 'U': 'hint-up', 'R': 'hint-right', 'D': 'hint-down', 'L': 'hint-left' };
-        let { x, y } = path[0];
-        for (let i = 1; i < path.length; ++i) {
-            const node = path[i];
+        for (const move of path) {
             moves.push(node.move);
-            const hint = document.createElement('div');
-            hint.className = `tile hint ${HINT_NAMES[node.move]}`;
-            el.game.querySelector(`[data-coord="${x}-${y}"]`).appendChild(hint);
-            x = node.x;
-            y = node.y;
+            if (move.parent) {
+                const { x, y } = move.parent;
+                const hint = document.createElement('div');
+                hint.className = `tile hint ${HINT_NAMES[move.move]}`;
+                el.game.querySelector(`[data-coord="${x}-${y}"]`).appendChild(hint);
+            }
         }
         el.path.textContent = `${moves.length}: ${moves.join('')} (${iterations} iterations)`;
         el.points.value = Math.round(iterations / 10);
@@ -128,6 +188,7 @@ import("./chilly.js");
         el.threshold2.value = moves.length + 1;
         el.threshold3.value = Math.round(moves.length * 1.4);
     }
+
     function checkForProblems() {
         let problems = [];
         // check if all connections begin and end at holes
@@ -236,10 +297,13 @@ import("./chilly.js");
             if (tile.classList.contains('rock')) {
                 row += Tile.Rock;
             }
+            else if (tile.classList.contains('tree')) {
+                row += Tile.Tree;
+            }
             else if (tile.classList.contains('empty')) {
                 row += Tile.Empty;
             }
-            else if (tile.classList.contains('penguin')) {
+            else if (tile.classList.contains('penguin-standing')) {
                 row += Tile.Player;
             }
             else if (tile.classList.contains('coin')) {
@@ -290,6 +354,9 @@ import("./chilly.js");
                     case Tile.Rock:
                         tile.classList.add('rock');
                         break;
+                    case Tile.Tree:
+                        tile.classList.add('tree');
+                        break;
                     case Tile.Empty:
                         tile.classList.add('empty');
                         break;
@@ -303,7 +370,7 @@ import("./chilly.js");
                         tile.classList.add('exit');
                         break;
                     case Tile.Player:
-                        tile.classList.add('penguin');
+                        tile.classList.add('penguin-standing');
                         break;
                     case Tile.Marker:
                         tile.classList.add('marker');
@@ -420,6 +487,9 @@ import("./chilly.js");
             case '#':
                 newSelectedItem = 'rock';
                 break;
+            case 't':
+                newSelectedItem = 'tree';
+                break;
             case 'm':
             case '.':
                 newSelectedItem = 'marker';
@@ -454,13 +524,38 @@ import("./chilly.js");
         }
     }
     function onKeyDown(e) {
+        if (e.altKey && e.key === 'Alt') {
+            if (A === null) {
+                A = { ...currentPos };
+            }
+            else {
+                B = { ...currentPos };
+            }
+            if (A !== null && B !== null) {
+                solveAB(A, B)
+                    .then(path => {
+                        if (path) {
+                            console.log('SOLVED', path.map(node => node.move).join(''));
+                        }
+                        A = B = null;
+                    });
+            }
+            return e.preventDefault();
+        }
         if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
             undo();
             updateAll();
-            return;
+            return e.preventDefault();
         }
     }
     function onKeyUp(e) {
+        if (e.key === 'Alt') {
+            solve().then(path => {
+                if (path) {
+                    console.log('SOLVED', path.map(node => node.move).join(''));
+                }
+            });
+        }
         switch (e.key) {
             case 'Delete':
             // fall-through
@@ -539,6 +634,10 @@ import("./chilly.js");
                 connectionLine.setAttribute('y2', upscaled(e.target.getAttribute('data-y')));
                 break;
             default:
+                currentPos = {
+                    x: e.target.getAttribute('data-x') | 0,
+                    y: e.target.getAttribute('data-y') | 0,
+                };
                 break;
         }
     }
