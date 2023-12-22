@@ -55,6 +55,7 @@ def main():
     image-rendering: -webkit-optimize-contrast;
     image-rendering: crisp-edges;
     -ms-interpolation-mode: nearest-neighbor;
+    box-sizing: content-box; /* needed for editor */
 }}
 {css}"""
     with open(config['output'], 'w+') as css_out:
