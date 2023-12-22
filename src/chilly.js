@@ -138,7 +138,7 @@ class ChillySolver {
             let yStep = 0;
             let collected = new Set();
             try {
-                while ([Tile.Ice, Tile.Coin, Tile.Gold, Tile.Marker, Tile.Flower, Tile.Empty].includes(this.cellAt(x + dx, y + dy))) {
+                while ([Tile.Ice, Tile.Coin, Tile.Gold, Tile.Marker, Tile.Empty].includes(this.cellAt(x + dx, y + dy))) {
                     x += dx;
                     y += dy;
                     if ([Tile.Coin, Tile.Gold].includes(this.cellAt(x, y))) {
