@@ -55,6 +55,7 @@ import("./chilly.js");
     const STORAGE_KEY_LEVEL = 'rutschpartie.level';
     const STORAGE_KEY_WIDTH = 'rutschpartie.width';
     const STORAGE_KEY_HEIGHT = 'rutschpartie.height';
+    const STORAGE_KEY_NAME = 'rutschpartie.name';
     const STORAGE_KEY_ITEM = 'rutschpartie.item';
     const el = {};
     let selectedItem = localStorage.getItem(STORAGE_KEY_ITEM) || 'rock';
@@ -245,7 +246,7 @@ import("./chilly.js");
         return {
             data: level.data,
             connections: level.connectionData(),
-            name: document.querySelector('[name="levelName"]').value,
+            name: el.name.value,
         };
     }
     function saveLevel(rows) {
@@ -420,7 +421,6 @@ import("./chilly.js");
         if (!level.connections) {
             level.connections = [];
         }
-        document.querySelector('[name="levelName"]').value = level.name;
         if (level.connections instanceof Array) {
             for (const conn of level.connections) {
                 const x1 = parseInt(conn.src.x);
@@ -450,7 +450,7 @@ import("./chilly.js");
                 parseInt(el.threshold3.value),
             ],
             basePoints: parseInt(el.points.value),
-            name: document.querySelector('[name="levelName"]').value,
+            name: el.name.value,
             data: level.data,
             connections: level.connectionData(),
         };
@@ -747,6 +747,13 @@ import("./chilly.js");
         el.problems = document.querySelector('#problems');
         el.path = document.querySelector('#path');
         el.points = document.querySelector('[name="basePoints"]');
+        el.name = document.querySelector('[name="levelName"]');
+        el.name.addEventListener('input', e => {
+            localStorage.setItem(STORAGE_KEY_NAME, e.target.value);
+        });
+        if (localStorage.hasOwnProperty(STORAGE_KEY_NAME)) {
+            el.name.value = localStorage.getItem(STORAGE_KEY_NAME);
+        }
         el.itemForm = document.querySelectorAll('#item-form');
         el.itemForm.item.value = selectedItem;
         el.itemSelector = document.querySelectorAll('input[name="item"]');
