@@ -300,6 +300,9 @@ import("./chilly.js");
             else if (tile.classList.contains('tree')) {
                 row += Tile.Tree;
             }
+            else if (tile.classList.contains('flower')) {
+                row += Tile.Flower;
+            }
             else if (tile.classList.contains('empty')) {
                 row += Tile.Empty;
             }
@@ -357,6 +360,9 @@ import("./chilly.js");
                     case Tile.Tree:
                         tile.classList.add('tree');
                         break;
+                    case Tile.Flower:
+                        tile.classList.add('flower');
+                        break;
                     case Tile.Empty:
                         tile.classList.add('empty');
                         break;
@@ -376,9 +382,10 @@ import("./chilly.js");
                         tile.classList.add('marker');
                         break;
                     case Tile.Ice:
-                    // fall-through
-                    default:
                         tile.classList.add('ice');
+                        break;
+                    default:
+                        console.error(`Invalid tile @ ${x},${y}: ${item}`);
                         break;
                 }
                 tiles.push(tile);
@@ -504,6 +511,9 @@ import("./chilly.js");
                 break;
             case 'g':
                 newSelectedItem = 'gold';
+                break;
+            case 'f':
+                newSelectedItem = 'flower';
                 break;
             case 'o':
                 newSelectedItem = 'hole';

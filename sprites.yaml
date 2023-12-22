@@ -12,6 +12,7 @@ src:
   - _raw/snowy-tree.png
   - _raw/flower.png
   - _raw/exit.png
+  - _raw/egg.png
   - _raw/coin.png
   - _raw/coin-no-bg.png
   - _raw/visited.png
@@ -33,6 +34,11 @@ src:
   - _raw/penguin-right-xmas.png
   - _raw/penguin-up-xmas.png
   - _raw/penguin-down-xmas.png
+  - _raw/penguin-standing-easter.png
+  - _raw/penguin-left-easter.png
+  - _raw/penguin-right-easter.png
+  - _raw/penguin-up-easter.png
+  - _raw/penguin-down-easter.png
   - _raw/speaker.png
   - _raw/speaker-muted.png
   - _raw/restart.png

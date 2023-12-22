@@ -27,8 +27,17 @@ import('./static/js/howler.core.min.js');
 (function (window) {
     "use strict";
 
-    const XMAS = false;
+
     const DEBUG = true;
+
+
+    class Themes {
+        static Default = 0;
+        static Xmas = 1;
+        static Easter = 2;
+    }
+
+    const theme = Themes.Easter;
 
     class RegularTiles {
         static PenguinUpright = 'penguin-standing';
@@ -46,7 +55,24 @@ import('./static/js/howler.core.min.js');
         static PenguinDown = 'penguin-down-xmas';
     }
 
-    const Tiles = XMAS ? XmasTiles : RegularTiles;
+    class EasterTiles {
+        static PenguinUpright = 'penguin-standing-easter';
+        static PenguinLeft = 'penguin-left-easter';
+        static PenguinRight = 'penguin-right-easter';
+        static PenguinUp = 'penguin-up-easter';
+        static PenguinDown = 'penguin-down-easter';
+    }
+
+    const Tiles = (function(theme) {
+        switch (theme) {
+            case Themes.Xmas:
+                return XmasTiles;
+            case Themes.Easter:
+                return EasterTiles;
+            default:
+                return RegularTiles;
+        }
+    })(theme);
 
     class State {
         static PreInit = -1;
@@ -276,7 +302,7 @@ import('./static/js/howler.core.min.js');
         const x = (player.x + Math.round(dx) + level.width) % level.width;
         const y = (player.y + Math.round(dy) + level.height) % level.height;
         if (level.data[y][x] === Tile.Coin) {
-            level.tiles[y][x].classList.replace(XMAS ? 'present' : 'coin', 'ice');
+            level.tiles[y][x].classList.replace(theme === Themes.Xmas ? 'present' : theme === Themes.Easter ? 'egg' : 'coin', 'ice');
             delete level.collectibles[`${x},${y}`];
             level.data[y] = level.data[y].substring(0, x) + Tile.Ice + level.data[y].substring(x + 1);
             sounds.coin.play();
@@ -540,7 +566,7 @@ import('./static/js/howler.core.min.js');
                         tile.classList.add('empty');
                         break;
                     case Tile.Coin:
-                        tile.classList.add(XMAS ? 'present' : 'coin');
+                        tile.classList.add(theme === Themes.Xmas ? 'present' : theme === Themes.Easter ? 'egg' : 'coin');
                         level.collectibles[`${x},${y}`] = item;
                         break;
                     case Tile.Gold:
@@ -551,7 +577,7 @@ import('./static/js/howler.core.min.js');
                         tile.classList.add('flower');
                         break;
                     case Tile.Tree:
-                        tile.classList.add('snowy-tree');
+                        tile.classList.add(theme === Themes.Xmas ? 'snowy-tree': 'tree');
                         break;
                     case Tile.Exit:
                         tile.classList.add('exit');
