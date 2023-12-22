@@ -530,6 +530,8 @@ import("./chilly.js");
         if (newSelectedItem !== selectedItem) {
             setSelectedItem(newSelectedItem);
             document.itemForm.item.value = newSelectedItem;
+        }
+        if (document.activeElement !== el.name) {
             e.preventDefault();
         }
     }
