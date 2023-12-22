@@ -110,6 +110,7 @@ import('./static/js/howler.core.min.js');
         distance: 0,
     };
     let autoplayIdx = 0;
+    let autoplayMoves = '';
     let level = {
         origData: [],
         connections: [],
@@ -230,7 +231,7 @@ import('./static/js/howler.core.min.js');
         player.el.style.transform = `rotate(${angle + Math.PI / 2}rad)`;
         standUpright();
         const dist = Math.sqrt(squared(player.x - player.dest.x) + squared(player.y - player.dest.y));
-        const animationDurationFactor = (state === State.Autoplay ? 13 : 133);
+        const animationDurationFactor = (state === State.Autoplay ? 67 : 133);
         animationDuration = animationDurationFactor * dist;
         t0 = performance.now();
         t1 = t0 + animationDuration;
@@ -374,7 +375,7 @@ import('./static/js/howler.core.min.js');
             else {
                 player.dest = { x, y };
             }
-            const animationDurationFactor = (state === State.Autoplay ? 33 : 100);
+            const animationDurationFactor = (state === State.Autoplay ? 66 : 100);
             animationDuration = animationDurationFactor * dist;
             t0 = performance.now();
             t1 = t0 + animationDuration;
@@ -710,10 +711,12 @@ import('./static/js/howler.core.min.js');
     function autoplay() {
         if (el.path.value.length === 0)
             return;
+        player.moves = [];
         restartGame();
         autoplayIdx = 0;
+        autoplayMoves = el.path.value;
         setState(State.Autoplay);
-        moveTo(el.path.value[0]);
+        checkAutoplay();
     }
     function play() {
         el.overlayBox.removeEventListener('click', play);
