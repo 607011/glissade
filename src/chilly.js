@@ -177,54 +177,6 @@ class ChillySolver {
         }
     }
 
-    async shortestPathAlongCollectibles(callback) {
-        if (this.#startNode === null)
-            return [null, 0];
-
-        const q = new FIFOQueue([this.#startNode]);
-        let iterations = 0;
-        if (typeof callback === 'function') {
-            await callback(this.#startNode, undefined, null);
-        }
-
-        this.#startNode.toCollect = { ...this.#collectibles };
-
-        console.debug(this.#startNode.toCollect)
-
-        while (q.isNotEmpty()) {
-            const currentNode = q.dequeue();
-            // console.debug(`CURRENT NODE @ ${currentNode.x},${currentNode.y}`);
-            if (currentNode.toCollect.size === 0) {
-                return [currentNode, iterations];
-            }
-            // for (const adjacent of this.neighborsOf(currentNode)) {
-            for (const adjacent of currentNode.neighbors) {
-                ++iterations;
-                if (setsAreEqual(currentNode.toCollect, adjacent.node.toCollect)) {
-                    adjacent.node.clearMoves();
-                    continue;
-                }
-                // don't go to exit if there are items left to collect
-                if (adjacent.node.isExit() && currentNode.toCollect.size > 0)
-                    continue;
-                // console.debug(`    Going ${adjacent.move}, collecting `, adjacent.collected);
-                adjacent.node.toCollect = { ... currentNode.toCollect };
-                for (const collectible of adjacent.collected) {
-                    adjacent.node.toCollect.delete(collectible);
-                    // console.debug(`       Removing ${collectible.id} @ ${collectible.x},${collectible.y}, to-do:`, adjacent.node.toCollect)
-                }
-                adjacent.node.addMove(currentNode, adjacent.move);
-                // console.debug(`    Enqueueing ${adjacent.node.x},${adjacent.node.y}`)
-                q.enqueue(adjacent.node);
-                if (typeof callback === 'function') {
-                    await callback(adjacent.node, adjacent.move, currentNode);
-                }
-            }
-        }
-        return [null, iterations];
-    }
-
-
     async shortestPathAB(A, B, callback) {
         if (A === null || B === null)
             return [null, 0];

@@ -149,25 +149,17 @@ import('./static/js/howler.core.min.js');
             data: level.origData,
             connections: level.connections,
         });
-        let [node, iterations] = (solver.hasCollectibles())
-            ? await solver.shortestPathAlongCollectibles()
-            : await solver.shortestPath();
-        console.debug(`iterations: ${iterations}, total nodes: ${solver.nodeCount}`);
-        console.debug('Accessible nodes:', solver.accessibleNodes);
+        let [node, iterations] = await solver.shortestPath();
         if (node === null) {
             document.querySelector('#path').textContent = '<no solution>';
             return;
         }
-        console.debug(node)
         let path = [node];
-        console.debug(`Reached final node @ ${node.x},${node.y}`);
         while (node.hasMoves() && !node.isStart()) {
             const move = node.nextMove();
             node = move.parent;
             path.unshift(move);
         }
-        console.debug(path);
-        console.debug('Accessible nodes:', JSON.stringify(solver.accessibleNodes, 2));
         const moves = [];
         const HINT_NAMES = { 'U': 'hint-up', 'R': 'hint-right', 'D': 'hint-down', 'L': 'hint-left' };
         for (const move of path) {
@@ -669,17 +661,6 @@ import('./static/js/howler.core.min.js');
         animatePointsEarned();
         showOverlay();
     }
-
-    // function hasCollectibles(level) {
-    //     return level.some(row => row.match('[\$G]'));
-    // }
-
-    // /**
-    //  * @return  true, if level has collectibles, false otherwise
-    //  */
-    // function levelHasCollectibles() {
-    //     return hasCollectibles(level.origData);
-    // }
 
     function setLevel(levelData) {
         level.data = [...levelData.data];
