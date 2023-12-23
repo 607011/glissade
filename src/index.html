@@ -1556,11 +1556,11 @@
             "name": "Front Yard",
             "creator": "ola",
             "data": [
-                "#############     Y ",
-                "#    #     ##   Y   ",
-                "#           #       ",
-                "#  # #  #   # Y  Y  ",
-                "#  #   #    X       ",
+                "#############     Y ",
+                "#    #     ##   Y   ",
+                "#           #       ",
+                "#  # #  #   # Y  Y  ",
+                "#  #   #    X       ",
                 "#      #  # ########",
                 "#   #       #      #",
                 "# #        #     # #",
@@ -1706,6 +1706,102 @@
             ]
         },
         {
+            "thresholds": [
+              8,
+              11,
+              13
+            ],
+            "basePoints": 0,
+            "name": "Mini Easter",
+            "data": [
+              "###YY#T#",
+              "X $YO$ P",
+              "T      T",
+              "Y   T  Y",
+              "TO    TY",
+              "#T$    #",
+              "Y  T$ OT",
+              "YTY#TT##"
+            ],
+            "connections": [
+              {
+                "src": {
+                  "x": 4,
+                  "y": 1
+                },
+                "dst": {
+                  "x": 6,
+                  "y": 6
+                }
+              },
+              {
+                "src": {
+                  "x": 6,
+                  "y": 6
+                },
+                "dst": {
+                  "x": 1,
+                  "y": 4
+                }
+              },
+              {
+                "src": {
+                  "x": 1,
+                  "y": 4
+                },
+                "dst": {
+                  "x": 4,
+                  "y": 1
+                }
+              }
+            ]
+          },
+          {
+            "thresholds": [
+              4,
+              5,
+              6
+            ],
+            "basePoints": 2,
+            "name": "Midi Easter",
+            "data": [
+              "OY T    $ Y$Y",
+              " X          Y",
+              "  T # T   $O ",
+              " T       T  T",
+              "#Y   #  TT# T",
+              "Y T $    Y ##",
+              "      Y T $  ",
+              "TT   Y  Y#Y T",
+              " $ #    # $T ",
+              "  $ # Y   T  ",
+              "T    T     P#",
+              "  Y $  Y T  Y"
+            ],
+            "connections": [
+              {
+                "src": {
+                  "x": 0,
+                  "y": 0
+                },
+                "dst": {
+                  "x": 11,
+                  "y": 2
+                }
+              },
+              {
+                "src": {
+                  "x": 11,
+                  "y": 2
+                },
+                "dst": {
+                  "x": 0,
+                  "y": 0
+                }
+              }
+            ]
+          },
+        {
             "name": "Be Careful",
             "creator": "ola",
             "basePoints": 10,
@@ -1738,27 +1834,27 @@
             ],
             "best": "LURLURURDRDLDLURDUURDLDLU",
             "data": [
-                "#########X##########",
-                "##    $# $        $#",
-                "#$      O          #",
-                "#          #       #",
-                "#                 ##",
-                "#                  #",
-                "#                  #",
-                "#                  #",
-                "#   #              #",
-                "#     # #          #",
-                "#           #      #",
-                "#      #      $    #",
-                "#                 ##",
-                "#  #          $   O#",
-                "#      $ #         #",
-                "#       #     #    #",
-                "# #                #",
-                "#                  #",
+                "YY#Y##YYTX#YYYYTYT##",
+                "Y#    $T $        $#",
+                "#$      O          Y",
+                "#          Y       Y",
+                "Y                 YT",
+                "Y                  #",
+                "#                  Y",
+                "Y                  T",
+                "T   #              T",
+                "#     # T          T",
+                "T           T      T",
+                "Y      Y      $    #",
+                "Y                 #Y",
+                "T  T          $   O#",
+                "Y      $ Y         T",
+                "#       Y     Y    T",
+                "# Y                #",
+                "T                  T",
                 "#        P         #",
-                "####################"
-            ]
+                "TTT#T#Y##TTYYTTY#YT#"
+        ]
         },
         {
             "thresholds": [
@@ -1842,62 +1938,7 @@
                 }
               }
             ]
-          },
-          {
-            "name": "Happy Easter!",
-            "creator": "ola",
-            "basePoints": 10,
-            "thresholds": [
-                25,
-                27,
-                36
-            ],
-            "connections": [
-                {
-                    "src": {
-                        "x": 8,
-                        "y": 2
-                    },
-                    "dst": {
-                        "x": 18,
-                        "y": 13
-                    }
-                },
-                {
-                    "src": {
-                        "x": 18,
-                        "y": 13
-                    },
-                    "dst": {
-                        "x": 8,
-                        "y": 2
-                    }
-                }
-            ],
-            "best": "LURLURURDRDLDLURDUURDLDLU",
-            "data": [
-                "YY#Y##YYTX#YYYYTYT##",
-                "Y#    $T $        $#",
-                "#$      O          Y",
-                "#          Y       Y",
-                "Y                 YT",
-                "Y                  #",
-                "#                  Y",
-                "Y                  T",
-                "T   #              T",
-                "#     # T          T",
-                "T           T      T",
-                "Y      Y      $    #",
-                "Y                 #Y",
-                "T  T          $   O#",
-                "Y      $ Y         T",
-                "#       Y     Y    T",
-                "# Y                #",
-                "T                  T",
-                "#        P         #",
-                "TTT#T#Y##TTYYTTY#YT#"
-            ]
-        }
+          }
     ]
     </script>
 </body>
