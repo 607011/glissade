@@ -684,9 +684,7 @@ import('./static/js/howler.core.min.js');
         el.scene = generateScene();
         el.game.replaceChildren(el.scene, player.el);
         replacePlayerWithIceTile();
-        // el.findRouteButton.disabled = !levelHasCollectibles();
-        scrollIntoView();
-        window.dispatchEvent(new Event('resize'));
+        onResize();
     }
 
     function restoreState() {
